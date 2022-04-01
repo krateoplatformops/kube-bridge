@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -20,13 +21,39 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const (
+	banner = `Krateo Control Plane
+┏┓        ┏┓          ┏┓       ┏┓   ┏┓
+┃┃┏┓ ┏┓┏┓ ┃┗━┓ ┏━━┓   ┃┗━┓ ┏━┓ ┗┛ ┏━┛┃ ┏━━┓ ┏━━┓ 
+┃┗┛┛ ┃┃┃┃ ┃┏┓┃ ┃┃━┫   ┃┏┓┃ ┃┏┛ ┏┓ ┃┏┓┃ ┃┏┓┃ ┃┃━┫ 
+┃┏┓┓ ┃┗┛┃ ┃┗┛┃ ┃┃━┫   ┃┗┛┃ ┃┃  ┃┃ ┃┗┛┃ ┃┗┛┃ ┃┃━┫ 
+┗┛┗┛ ┗━━┛ ┗━━┛ ┗━━┛   ┗━━┛ ┗┛  ┗┛ ┗━━┛ ┗━┓┃ ┗━━┛ ver: VERSION
+Kubernetes Bridge Component            ┗━━┛      cid: BUILD`
+)
+
+var (
+	Version string
+	Build   string
+)
+
 func main() {
 	// Flags
 	defaultKubeconfig := os.Getenv(clientcmd.RecommendedConfigPathEnvVar)
 	kubeconfig := flag.String(clientcmd.RecommendedConfigPathFlag,
 		defaultKubeconfig, "absolute path to the kubeconfig file")
-	verbose := flag.Bool("verbose", false, "dump verbose output")
-	loggerServiceUrl := flag.String("logger-service-url", "", "logger service url")
+
+	debug := flag.Bool("debug", support.EnvBool("KUBE_BRIDGE_DEBUG", false), "dump verbose output")
+
+	loggerServiceUrl := flag.String("logger-service-url", support.EnvString("LOGGER_SERVICE_URL", ""),
+		"logger service url")
+
+	servicePort := flag.Int("port", support.EnvInt("KUBE_BRIDGE_PORT", 8171), "port to listen on")
+
+	flag.Usage = func() {
+		printBanner()
+		fmt.Fprintln(flag.CommandLine.Output(), "Flags:")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 
@@ -35,7 +62,7 @@ func main() {
 
 	// Default level for this log is info, unless debug flag is present
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if *verbose {
+	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
@@ -65,7 +92,7 @@ func main() {
 	// Bootstrap krateo runtime
 	err = boot.Run(boot.BootOptions{
 		Config:  cfg,
-		Verbose: *verbose,
+		Verbose: *debug,
 		Bus:     bus,
 	})
 	if err != nil {
@@ -88,7 +115,7 @@ func main() {
 		))
 	*/
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%s", support.Env("PORT", "8080")),
+		Addr:         fmt.Sprintf(":%d", servicePort),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -131,4 +158,10 @@ func main() {
 	}
 
 	log.Info().Msg("server gracefully stopped")
+}
+
+func printBanner() {
+	res := strings.Replace(banner, "VERSION", Version, 1)
+	res = strings.Replace(res, "BUILD", Build, 1)
+	fmt.Fprintf(flag.CommandLine.Output(), "%s:\n\n", res)
 }
