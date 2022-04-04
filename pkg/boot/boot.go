@@ -27,9 +27,9 @@ func Run(opts BootOptions) error {
 	if err != nil {
 		return err
 	}
+	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("namespace '%s' successfully created", kubernetes.CrossplaneSystemNamespace)))
 
 	// Install Crossplane
-	opts.Bus.Publish(support.InfoNotification("Installing Runtime..."))
 	err = installCrossplaneEventually(dc, opts)
 	if err != nil {
 		return err
@@ -75,13 +75,16 @@ func installCrossplaneEventually(dc dynamic.Interface, opts BootOptions) error {
 	}
 
 	if ok {
+		opts.Bus.Publish(support.InfoNotification("crossplane already installed"))
 		return nil
 	}
 
+	opts.Bus.Publish(support.InfoNotification("installing crossplane chart..."))
 	err = installCrossplaneChart(opts.Config, opts.Bus, opts.Verbose)
 	if err != nil {
 		return err
 	}
+	opts.Bus.Publish(support.InfoNotification("crossplane chart successfully installed."))
 
 	return waitForCrossplaneReady(dc)
 }

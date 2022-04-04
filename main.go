@@ -99,8 +99,8 @@ func main() {
 			Bus:     bus,
 		})
 		if err != nil {
+			bus.Publish(support.ErrorNotification(err))
 			log.Fatal().Err(err).Msg("booting krateo required deps")
-			support.ErrorNotification(err)
 		}
 	}
 
