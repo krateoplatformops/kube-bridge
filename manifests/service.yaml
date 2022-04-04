@@ -28,15 +28,15 @@ spec:
       containers:
       - name: kube-bridge
         image: ghcr.io/krateoplatformops/kube-bridge:0.0.0
-        env:
-          - name: LOGGER_SERVICE_URL
-            value: "http://logger-service:8080"
-          - name: KUBE_BRIDGE_BOOTSTRAP
-            value: "true"
-          - name: KUBE_BRIDGE_DEBUG
-            value: "true"
-          - name: KUBE_BRIDGE_PORT
-            value: "8171"
+        # env:
+        #  - name: LOGGER_SERVICE_URL
+        #    value: "http://logger-service:8080"
+        #  - name: KUBE_BRIDGE_BOOTSTRAP
+        #    value: "true"
+        #  - name: KUBE_BRIDGE_DEBUG
+        #    value: "true"
+        #  - name: KUBE_BRIDGE_PORT
+        #    value: "8171"
         ports:
         - containerPort: 8171
         resources:

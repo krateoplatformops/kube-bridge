@@ -55,8 +55,8 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.version=$VERSION \
       org.label-schema.docker.schema-version="1.0"
 
-ARG KUBE_BRIDGE_PORT
+# ARG KUBE_BRIDGE_PORT
 
-EXPOSE ${KUBE_BRIDGE_PORT}
+# EXPOSE ${KUBE_BRIDGE_PORT}
 
 ENTRYPOINT ["/bin/service"]
