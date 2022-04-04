@@ -1,0 +1,67 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-bridge
+  namespace: krateo-system
+  labels:
+    app.kubernetes.io/name: kube-bridge
+    app.kubernetes.io/instance: krateo
+    app.kubernetes.io/component: control-plane
+    app.kubernetes.io/version: develop
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-bridge
+      app.kubernetes.io/instance: krateo
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-bridge
+        app.kubernetes.io/instance: krateo
+        app.kubernetes.io/component: control-plane
+        app.kubernetes.io/version: develop
+    spec:
+      serviceAccountName: krateo-kube-bridge
+      containers:
+      - name: kube-bridge
+        image: ghcr.io/krateoplatformops/kube-bridge:latest
+        env:
+          - name: LOGGER_SERVICE_URL
+            value: "http://logger-service:8080"
+          - name: KUBE_BRIDGE_BOOTSTRAP
+            value: "true"
+          - name: KUBE_BRIDGE_DEBUG
+            value: "true"
+        ports:
+        - containerPort: 8171
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            # you can monitor memory usage using "kubectl -n krateo top pods"
+            memory: "256Mi"
+            cpu: "100m"
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-bridge
+  namespace: krateo-system
+  labels:
+    app.kubernetes.io/name: kube-bridge
+    app.kubernetes.io/instance: krateo
+    app.kubernetes.io/component: control-plane
+spec:
+  ports:
+  - port: 8171
+    targetPort: 8171
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: kube-bridge
+    app.kubernetes.io/instance: krateo

@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: krateo-kube-bridge
+  labels:
+    app.kubernetes.io/name: krateo-kube-bridge
+    app.kubernetes.io/component: control-plane
+---
