@@ -14,6 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/cache"
+	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 func isCrossplaneInstalled(dc dynamic.Interface) (bool, error) {
@@ -35,46 +37,6 @@ func isCrossplaneInstalled(dc dynamic.Interface) (bool, error) {
 	}
 
 	return len(list.Items) > 0, nil
-}
-
-// waitForCrossplaneReady waits until Crossplane POD is ready
-func waitForCrossplaneReady(dc dynamic.Interface) error {
-	sel, err := labels.Parse("app=crossplane")
-	if err != nil {
-		return err
-	}
-
-	gvr := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
-
-	watcher, err := dc.Resource(gvr).
-		Namespace(kubernetes.CrossplaneSystemNamespace).
-		Watch(context.Background(), metav1.ListOptions{LabelSelector: sel.String()})
-	if err != nil {
-		return err
-	}
-
-	for event := range watcher.ResultChan() {
-		switch event.Type {
-		case watch.Added, watch.Modified:
-			obj, _ := event.Object.(*unstructured.Unstructured)
-			pod := &corev1.Pod{}
-			err := runtime.DefaultUnstructuredConverter.
-				FromUnstructured(obj.UnstructuredContent(), &pod)
-			if err != nil {
-				watcher.Stop()
-				return err
-			}
-
-			for _, cond := range pod.Status.Conditions {
-				if cond.Type == corev1.PodReady &&
-					cond.Status == corev1.ConditionTrue {
-					watcher.Stop()
-				}
-			}
-		}
-	}
-
-	return nil
 }
 
 func createControllerConfig(dc dynamic.Interface) error {
@@ -291,3 +253,114 @@ func createCrossplaneProviderKubernetes(dc dynamic.Interface) error {
 	}
 	return nil
 }
+
+// sentinel is an object that knows how to
+// start a watch on pods resources
+//
+// this is our implementation of `cache.Watcher`
+type sentinel struct {
+	client      dynamic.Interface
+	timeoutSecs int64
+}
+
+// newSentinel returns a new `sentinel` object that implements `cache.Watcher`
+func newSentinel(cs dynamic.Interface, timeout int64) cache.Watcher {
+	return &sentinel{cs, timeout}
+}
+
+// Watch begin a watch on pods resources
+func (s *sentinel) Watch(options metav1.ListOptions) (watch.Interface, error) {
+	sel, err := labels.Parse("app=crossplane")
+	if err != nil {
+		return nil, err
+	}
+
+	gvr := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
+
+	return s.client.Resource(gvr).
+		Namespace(kubernetes.CrossplaneSystemNamespace).
+		Watch(context.Background(), metav1.ListOptions{
+			LabelSelector:  sel.String(),
+			TimeoutSeconds: &s.timeoutSecs,
+		})
+}
+
+// just to be sure that `cache.Watcher` interface
+// is being implemented by our `sentinel` struct type
+var _ cache.Watcher = (*sentinel)(nil)
+
+// waitForCrossplaneReady waits until Crossplane POD is ready
+func waitForCrossplaneReady(dc dynamic.Interface) error {
+	watcher := newSentinel(dc, 50)
+	// create a `RetryWatcher` using initial
+	// version "1" and our specialized watcher
+	rw, err := toolsWatch.NewRetryWatcher("1", watcher)
+	if err != nil {
+		return err
+	}
+	defer rw.Stop()
+
+	for event := range rw.ResultChan() {
+		switch event.Type {
+		case watch.Added, watch.Modified:
+			obj, _ := event.Object.(*unstructured.Unstructured)
+			pod := &corev1.Pod{}
+			err := runtime.DefaultUnstructuredConverter.
+				FromUnstructured(obj.UnstructuredContent(), &pod)
+			if err != nil {
+				return err
+			}
+
+			for _, cond := range pod.Status.Conditions {
+				if cond.Type == corev1.PodReady &&
+					cond.Status == corev1.ConditionTrue {
+					rw.Stop()
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+/*
+// waitForCrossplaneReady waits until Crossplane POD is ready
+func waitForCrossplaneReady2(dc dynamic.Interface) error {
+	sel, err := labels.Parse("app=crossplane")
+	if err != nil {
+		return err
+	}
+
+	gvr := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
+
+	watcher, err := dc.Resource(gvr).
+		Namespace(kubernetes.CrossplaneSystemNamespace).
+		Watch(context.Background(), metav1.ListOptions{LabelSelector: sel.String()})
+	if err != nil {
+		return err
+	}
+
+	for event := range watcher.ResultChan() {
+		switch event.Type {
+		case watch.Added, watch.Modified:
+			obj, _ := event.Object.(*unstructured.Unstructured)
+			pod := &corev1.Pod{}
+			err := runtime.DefaultUnstructuredConverter.
+				FromUnstructured(obj.UnstructuredContent(), &pod)
+			if err != nil {
+				watcher.Stop()
+				return err
+			}
+
+			for _, cond := range pod.Status.Conditions {
+				if cond.Type == corev1.PodReady &&
+					cond.Status == corev1.ConditionTrue {
+					watcher.Stop()
+				}
+			}
+		}
+	}
+
+	return nil
+}
+*/
