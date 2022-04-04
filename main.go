@@ -47,6 +47,8 @@ func main() {
 	loggerServiceUrl := flag.String("logger-service-url", support.EnvString("LOGGER_SERVICE_URL", ""),
 		"logger service url")
 
+	bootstrap := flag.Bool("bootstrap", support.EnvBool("KUBE_BRIDGE_BOOTSTRAP", true), "enable/disable Krateo runtime bootstrap")
+
 	servicePort := flag.Int("port", support.EnvInt("KUBE_BRIDGE_PORT", 8171), "port to listen on")
 
 	flag.Usage = func() {
@@ -90,14 +92,16 @@ func main() {
 	defer bus.Unsubscribe(eid)
 
 	// Bootstrap krateo runtime
-	err = boot.Run(boot.BootOptions{
-		Config:  cfg,
-		Verbose: *debug,
-		Bus:     bus,
-	})
-	if err != nil {
-		log.Fatal().Err(err).Msg("booting krateo required deps")
-		support.ErrorNotification(err)
+	if *bootstrap {
+		err = boot.Run(boot.BootOptions{
+			Config:  cfg,
+			Verbose: *debug,
+			Bus:     bus,
+		})
+		if err != nil {
+			log.Fatal().Err(err).Msg("booting krateo required deps")
+			support.ErrorNotification(err)
+		}
 	}
 
 	// Server Mux
