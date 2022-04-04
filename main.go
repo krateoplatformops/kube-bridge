@@ -73,6 +73,15 @@ func main() {
 		Timestamp().
 		Logger()
 
+	if log.Debug().Enabled() {
+		log.Debug().
+			Str("bootstrap", fmt.Sprintf("%t", *bootstrap)).
+			Str("debug", fmt.Sprintf("%t", *debug)).
+			Str("loggerServiceUrl", *loggerServiceUrl).
+			Str("port", fmt.Sprintf("%d", *servicePort)).
+			Msg("configuration values")
+	}
+
 	// Kubernetes configuration
 	var cfg *rest.Config
 	var err error
@@ -119,7 +128,7 @@ func main() {
 		))
 	*/
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", servicePort),
+		Addr:         fmt.Sprintf(":%d", *servicePort),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

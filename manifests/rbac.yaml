@@ -113,6 +113,14 @@ rules:
       - clusterrolebindings
     verbs:
       - "*"
+  
+  - apiGroups:
+      - pkg.crossplane.io
+    resources:
+      - controllerconfigs
+      - providers
+    verbs:
+      - create 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
