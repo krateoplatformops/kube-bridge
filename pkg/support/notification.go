@@ -60,7 +60,8 @@ func NotificationDispatcher(addr string, log *zerolog.Logger) eventbus.EventHand
 			}
 
 			// TODO POST event
-			fmt.Fprintln(os.Stderr, string(dat))
+			fmt.Fprintln(os.Stdout, string(dat))
+
 		}()
 	}
 }
