@@ -42,10 +42,10 @@ func main() {
 	kubeconfig := flag.String(clientcmd.RecommendedConfigPathFlag,
 		defaultKubeconfig, "absolute path to the kubeconfig file")
 
-	debug := flag.Bool("debug", support.EnvBool("KUBE_BRIDGE_DEBUG", false), "dump verbose output")
-
 	loggerServiceUrl := flag.String("logger-service-url", support.EnvString("LOGGER_SERVICE_URL", ""),
 		"logger service url")
+
+	debug := flag.Bool("debug", support.EnvBool("KUBE_BRIDGE_DEBUG", true), "dump verbose output")
 
 	bootstrap := flag.Bool("bootstrap", support.EnvBool("KUBE_BRIDGE_BOOTSTRAP", true), "enable/disable Krateo runtime bootstrap")
 

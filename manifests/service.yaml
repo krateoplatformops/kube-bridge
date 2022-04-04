@@ -35,6 +35,8 @@ spec:
             value: "true"
           - name: KUBE_BRIDGE_DEBUG
             value: "true"
+          - name: KUBE_BRIDGE_PORT
+            value: "8171"
         ports:
         - containerPort: 8171
         resources:
