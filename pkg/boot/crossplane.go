@@ -2,6 +2,8 @@ package boot
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
 	corev1 "k8s.io/api/core/v1"
@@ -298,29 +300,43 @@ func waitForCrossplaneReady(dc dynamic.Interface) error {
 	if err != nil {
 		return err
 	}
-	defer rw.Stop()
+	defer func() {
+		if x := recover(); x != nil {
+			fmt.Fprintf(os.Stderr, "run time panic: %v", x)
+		}
+		rw.Stop()
+	}()
 
-	for event := range rw.ResultChan() {
-		switch event.Type {
-		case watch.Added, watch.Modified:
-			obj, _ := event.Object.(*unstructured.Unstructured)
-			pod := &corev1.Pod{}
-			err := runtime.DefaultUnstructuredConverter.
-				FromUnstructured(obj.UnstructuredContent(), &pod)
-			if err != nil {
-				return err
-			}
+	// process incoming event notifications
+	for {
+		// grab the event object
+		event, ok := <-rw.ResultChan()
+		if !ok {
+			return fmt.Errorf("closed channel")
+		}
 
-			for _, cond := range pod.Status.Conditions {
-				if cond.Type == corev1.PodReady &&
-					cond.Status == corev1.ConditionTrue {
-					rw.Stop()
-				}
+		if et := event.Type; et != watch.Added && et != watch.Modified {
+			continue
+		}
+
+		obj, ok := event.Object.(*unstructured.Unstructured)
+		if !ok {
+			return fmt.Errorf("invalid type '%T'", event.Object)
+		}
+		pod := &corev1.Pod{}
+		err := runtime.DefaultUnstructuredConverter.
+			FromUnstructured(obj.UnstructuredContent(), &pod)
+		if err != nil {
+			return err
+		}
+
+		for _, cond := range pod.Status.Conditions {
+			if cond.Type == corev1.PodReady &&
+				cond.Status == corev1.ConditionTrue {
+				return nil
 			}
 		}
 	}
-
-	return nil
 }
 
 /*
