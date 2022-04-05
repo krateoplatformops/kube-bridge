@@ -46,24 +46,23 @@ func Init(opts InitOptions) error {
 	if err != nil {
 		return err
 	}
+	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("crossplane provider '%s' successfully installed", providerHelm())))
 
 	// Install crossplane provider kubernetes
 	err = installCrossplaneProviderEventually(dc, providerKubernetes())
 	if err != nil {
 		return err
 	}
-	opts.Bus.Publish(support.InfoNotification("Runtime successfully installed"))
+	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("crossplane provider '%s' successfully installed", providerKubernetes())))
 
-	opts.Bus.Publish(support.InfoNotification("Creating roles bindings..."))
 	err = createRoleBindingForCrossplaneProviders(dc)
 	if err != nil {
 		return err
 	}
-	opts.Bus.Publish(support.InfoNotification("Roles bindings successfully created"))
+	opts.Bus.Publish(support.InfoNotification("roles bindings successfully created"))
 
-	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("Creating namespace %s)", kubernetes.KrateoSystemNamespace)))
 	createNamespace(dc, kubernetes.KrateoSystemNamespace)
-	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("Namespace '%s' created", kubernetes.KrateoSystemNamespace)))
+	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("namespace '%s' created", kubernetes.KrateoSystemNamespace)))
 
 	return nil
 }

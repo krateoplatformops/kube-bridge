@@ -23,6 +23,10 @@ func (pi *providerInfo) image() string {
 	return fmt.Sprintf("registry.upbound.io/crossplane/provider-%s:%s", pi.name, pi.version)
 }
 
+func (pi *providerInfo) String() string {
+	return fmt.Sprintf("provider-%s:%s", pi.name, pi.version)
+}
+
 func providerHelm() *providerInfo {
 	return &providerInfo{
 		name:    "helm",
