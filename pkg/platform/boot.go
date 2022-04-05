@@ -1,4 +1,4 @@
-package boot
+package platform
 
 import (
 	"fmt"
@@ -86,5 +86,5 @@ func installCrossplaneEventually(dc dynamic.Interface, opts BootOptions) error {
 	}
 	opts.Bus.Publish(support.InfoNotification("crossplane chart successfully installed."))
 
-	return WaitForCrossplaneReady(dc)
+	return waitForCrossplaneReady(dc)
 }

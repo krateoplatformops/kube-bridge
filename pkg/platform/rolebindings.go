@@ -1,4 +1,4 @@
-package boot
+package platform
 
 import (
 	"context"
