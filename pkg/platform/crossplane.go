@@ -4,15 +4,12 @@ import (
 	"context"
 
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 )
 
@@ -149,54 +146,6 @@ func createCrossplaneProviderHelm(dc dynamic.Interface) error {
 			return err
 		}
 	}
-	return nil
-}
-
-// waitForCrossplaneProvider waits until the specified crossplane provider is ready
-func waitForCrossplaneProvider(dc dynamic.Interface, name string) error {
-	req, err := labels.NewRequirement("pkg.crossplane.io/provider", selection.Equals, []string{name})
-	if err != nil {
-		return err
-	}
-
-	sel := labels.NewSelector()
-	sel = sel.Add(*req)
-
-	gvr := schema.GroupVersionResource{
-		Version:  "v1",
-		Resource: "pods",
-	}
-
-	watcher, err := dc.Resource(gvr).Watch(context.Background(),
-		metav1.ListOptions{LabelSelector: sel.String()},
-	)
-	if err != nil {
-		return err
-	}
-
-	for event := range watcher.ResultChan() {
-		switch event.Type {
-		case watch.Added:
-		case watch.Modified:
-			obj, _ := event.Object.(*unstructured.Unstructured)
-
-			pod := &corev1.Pod{}
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &pod)
-			if err != nil {
-				watcher.Stop()
-				return err
-			}
-
-			for _, cond := range pod.Status.Conditions {
-				if cond.Type == corev1.PodReady &&
-					cond.Status == corev1.ConditionTrue {
-
-					watcher.Stop()
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
