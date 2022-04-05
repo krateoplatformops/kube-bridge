@@ -42,13 +42,13 @@ func Init(opts InitOptions) error {
 	}
 
 	// Install Crossplane provider helm
-	err = installCrossplaneProviderHelmEventually(dc)
+	err = installCrossplaneProviderEventually(dc, providerHelm())
 	if err != nil {
 		return err
 	}
 
 	// Install crossplane provider kubernetes
-	err = installCrossplaneProviderKubernetesEventually(dc)
+	err = installCrossplaneProviderEventually(dc, providerKubernetes())
 	if err != nil {
 		return err
 	}
@@ -66,25 +66,4 @@ func Init(opts InitOptions) error {
 	opts.Bus.Publish(support.InfoNotification(fmt.Sprintf("Namespace '%s' created", kubernetes.KrateoSystemNamespace)))
 
 	return nil
-}
-
-func installCrossplaneEventually(dc dynamic.Interface, opts InitOptions) error {
-	ok, err := isCrossplaneInstalled(dc)
-	if err != nil {
-		return err
-	}
-
-	if ok {
-		opts.Bus.Publish(support.InfoNotification("crossplane already installed"))
-		return nil
-	}
-
-	opts.Bus.Publish(support.InfoNotification("installing crossplane chart..."))
-	err = installCrossplaneChart(opts.Config, opts.Bus, opts.Verbose)
-	if err != nil {
-		return err
-	}
-	opts.Bus.Publish(support.InfoNotification("crossplane chart successfully installed."))
-
-	return waitForCrossplaneReady(dc)
 }

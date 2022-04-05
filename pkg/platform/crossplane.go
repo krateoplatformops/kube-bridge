@@ -2,36 +2,91 @@ package platform
 
 import (
 	"context"
+	"embed"
+	"fmt"
 
+	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
+	"github.com/krateoplatformops/kube-bridge/pkg/helm"
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
+	"github.com/krateoplatformops/kube-bridge/pkg/support"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 )
 
-func isCrossplaneInstalled(dc dynamic.Interface) (bool, error) {
-	gvr := schema.GroupVersionResource{
-		Version:  "v1",
-		Resource: "pods",
+const (
+	chartArchive     = "assets/crossplane-1.7.0.tgz"
+	chartReleaseName = "crossplane"
+)
+
+//go:embed assets/*
+var assetsFS embed.FS
+
+func installCrossplaneEventually(dc dynamic.Interface, opts InitOptions) error {
+	ok, err := isCrossplaneInstalled(dc)
+	if err != nil {
+		return err
 	}
 
+	if ok {
+		opts.Bus.Publish(support.InfoNotification("crossplane already installed"))
+		return nil
+	}
+
+	opts.Bus.Publish(support.InfoNotification("installing crossplane chart..."))
+	err = installCrossplaneChart(opts.Config, opts.Bus, opts.Verbose)
+	if err != nil {
+		return err
+	}
+	opts.Bus.Publish(support.InfoNotification("crossplane chart successfully installed."))
+
+	return waitForCrossplaneReady(dc)
+}
+
+func installCrossplaneChart(rc *rest.Config, bus eventbus.Bus, verbose bool) error {
+	fp, err := assetsFS.Open(chartArchive)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	opts := &helm.InstallOptions{
+		Namespace:   kubernetes.CrossplaneSystemNamespace,
+		ReleaseName: chartReleaseName,
+		ChartSource: fp,
+		ChartValues: map[string]interface{}{
+			"securityContextCrossplane": map[string]interface{}{
+				"runAsUser":  nil,
+				"runAsGroup": nil,
+			},
+			"securityContextRBACManager": map[string]interface{}{
+				"runAsUser":  nil,
+				"runAsGroup": nil,
+			},
+		},
+		LogFn: func(format string, v ...interface{}) {
+			if verbose && bus != nil {
+				msg := fmt.Sprintf(format, v...)
+				bus.Publish(support.InfoNotification(msg))
+			}
+		},
+	}
+
+	return helm.Install(rc, opts)
+}
+
+func isCrossplaneInstalled(dc dynamic.Interface) (bool, error) {
 	sel, err := labels.Parse("app=crossplane")
 	if err != nil {
 		return false, err
 	}
 
-	list, err := dc.Resource(gvr).
-		Namespace(kubernetes.CrossplaneSystemNamespace).
-		List(context.Background(), metav1.ListOptions{LabelSelector: sel.String()})
-	if err != nil {
-		return false, err
-	}
-
-	return len(list.Items) > 0, nil
+	return podExists(dc, sel)
 }
 
 func createControllerConfig(dc dynamic.Interface) error {
@@ -76,127 +131,17 @@ func createControllerConfig(dc dynamic.Interface) error {
 	return nil
 }
 
-func installCrossplaneProviderHelmEventually(dc dynamic.Interface) error {
-	name := "provider-helm"
-	ok, err := isCrossplaneProviderAlreadyInstalled(dc, "provider-helm")
+// waitForCrossplaneReady waits until Crossplane PODs are ready
+func waitForCrossplaneReady(dc dynamic.Interface) error {
+	sel, err := labels.Parse("app=crossplane")
 	if err != nil {
 		return err
 	}
 
-	if ok {
-		return nil
+	stopFn := func(cond corev1.PodCondition) bool {
+		return cond.Type == corev1.PodReady &&
+			cond.Status == corev1.ConditionTrue
 	}
 
-	err = createCrossplaneProviderHelm(dc)
-	if err != nil {
-		return err
-	}
-
-	return waitForCrossplaneProvider(dc, name)
-}
-
-func isCrossplaneProviderAlreadyInstalled(dc dynamic.Interface, name string) (bool, error) {
-	req, err := labels.NewRequirement("pkg.crossplane.io/provider", selection.Equals, []string{name})
-	if err != nil {
-		return false, err
-	}
-
-	sel := labels.NewSelector()
-	sel = sel.Add(*req)
-
-	gvr := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
-
-	list, err := dc.Resource(gvr).
-		Namespace(kubernetes.CrossplaneSystemNamespace).
-		List(context.Background(), metav1.ListOptions{LabelSelector: sel.String()})
-	if err != nil {
-		return false, err
-	}
-
-	return len(list.Items) > 0, nil
-}
-
-func createCrossplaneProviderHelm(dc dynamic.Interface) error {
-	gvr := schema.GroupVersionResource{
-		Group:    "pkg.crossplane.io",
-		Version:  "v1",
-		Resource: "providers",
-	}
-
-	obj := unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"kind":       "Provider",
-			"apiVersion": "pkg.crossplane.io/v1",
-			"metadata": map[string]interface{}{
-				"name": "crossplane-provider-helm",
-			},
-			"spec": map[string]interface{}{
-				"package": "registry.upbound.io/crossplane/provider-helm:v0.9.0",
-				"controllerConfigRef": map[string]interface{}{
-					"name": "krateo-controllerconfig",
-				},
-			},
-		},
-	}
-
-	_, err := dc.Resource(gvr).
-		Create(context.TODO(), &obj, metav1.CreateOptions{})
-	if err != nil {
-		if !errors.IsAlreadyExists(err) {
-			return err
-		}
-	}
-	return nil
-}
-
-func installCrossplaneProviderKubernetesEventually(dc dynamic.Interface) error {
-	name := "provider-kubernetes"
-	ok, err := isCrossplaneProviderAlreadyInstalled(dc, name)
-	if err != nil {
-		return err
-	}
-
-	if ok {
-		return nil
-	}
-
-	err = createCrossplaneProviderKubernetes(dc)
-	if err != nil {
-		return err
-	}
-
-	return waitForCrossplaneProvider(dc, name)
-}
-
-func createCrossplaneProviderKubernetes(dc dynamic.Interface) error {
-	gvr := schema.GroupVersionResource{
-		Group:    "pkg.crossplane.io",
-		Version:  "v1",
-		Resource: "providers",
-	}
-
-	obj := unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"kind":       "Provider",
-			"apiVersion": "pkg.crossplane.io/v1",
-			"metadata": map[string]interface{}{
-				"name": "crossplane-provider-kubernetes",
-			},
-			"spec": map[string]interface{}{
-				"package": "crossplane/provider-kubernetes:main",
-				"controllerConfigRef": map[string]interface{}{
-					"name": "krateo-controllerconfig",
-				},
-			},
-		},
-	}
-
-	_, err := dc.Resource(gvr).
-		Create(context.TODO(), &obj, metav1.CreateOptions{})
-	if err != nil {
-		if !errors.IsAlreadyExists(err) {
-			return err
-		}
-	}
-	return nil
+	return watchForPodStatus(dc, sel, stopFn)
 }

@@ -7,49 +7,35 @@ import (
 
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
-// waitForCrossplaneProvider waits until the specified crossplane provider is ready
-func waitForCrossplaneProvider(dc dynamic.Interface, name string) error {
-	req, err := labels.NewRequirement("pkg.crossplane.io/provider", selection.Equals, []string{name})
+func podExists(dc dynamic.Interface, sel labels.Selector) (bool, error) {
+	gvr := schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "pods",
+	}
+
+	list, err := dc.Resource(gvr).
+		Namespace(kubernetes.CrossplaneSystemNamespace).
+		List(context.Background(), metav1.ListOptions{LabelSelector: sel.String()})
 	if err != nil {
-		return err
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
 	}
 
-	sel := labels.NewSelector()
-	sel = sel.Add(*req)
-
-	stopFn := func(cond corev1.PodCondition) bool {
-		return cond.Type == corev1.PodReady &&
-			cond.Status == corev1.ConditionTrue
-	}
-
-	return watchForPodStatus(dc, sel, stopFn)
-}
-
-// waitForCrossplaneReady waits until Crossplane PODs are ready
-func waitForCrossplaneReady(dc dynamic.Interface) error {
-	sel, err := labels.Parse("app=crossplane")
-	if err != nil {
-		return err
-	}
-
-	stopFn := func(cond corev1.PodCondition) bool {
-		return cond.Type == corev1.PodReady &&
-			cond.Status == corev1.ConditionTrue
-	}
-
-	return watchForPodStatus(dc, sel, stopFn)
+	return len(list.Items) > 0, nil
 }
 
 func watchForPodStatus(dc dynamic.Interface, sel labels.Selector, stopFn func(corev1.PodCondition) bool) error {
