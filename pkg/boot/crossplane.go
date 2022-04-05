@@ -2,8 +2,6 @@ package boot
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
 	corev1 "k8s.io/api/core/v1"
@@ -16,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/cache"
-	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 func isCrossplaneInstalled(dc dynamic.Interface) (bool, error) {
@@ -256,6 +252,7 @@ func createCrossplaneProviderKubernetes(dc dynamic.Interface) error {
 	return nil
 }
 
+/*
 // sentinel is an object that knows how to
 // start a watch on pods resources
 //
@@ -337,46 +334,5 @@ func waitForCrossplaneReady(dc dynamic.Interface) error {
 			}
 		}
 	}
-}
-
-/*
-// waitForCrossplaneReady waits until Crossplane POD is ready
-func waitForCrossplaneReady2(dc dynamic.Interface) error {
-	sel, err := labels.Parse("app=crossplane")
-	if err != nil {
-		return err
-	}
-
-	gvr := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
-
-	watcher, err := dc.Resource(gvr).
-		Namespace(kubernetes.CrossplaneSystemNamespace).
-		Watch(context.Background(), metav1.ListOptions{LabelSelector: sel.String()})
-	if err != nil {
-		return err
-	}
-
-	for event := range watcher.ResultChan() {
-		switch event.Type {
-		case watch.Added, watch.Modified:
-			obj, _ := event.Object.(*unstructured.Unstructured)
-			pod := &corev1.Pod{}
-			err := runtime.DefaultUnstructuredConverter.
-				FromUnstructured(obj.UnstructuredContent(), &pod)
-			if err != nil {
-				watcher.Stop()
-				return err
-			}
-
-			for _, cond := range pod.Status.Conditions {
-				if cond.Type == corev1.PodReady &&
-					cond.Status == corev1.ConditionTrue {
-					watcher.Stop()
-				}
-			}
-		}
-	}
-
-	return nil
 }
 */

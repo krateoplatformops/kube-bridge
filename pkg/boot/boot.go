@@ -86,5 +86,5 @@ func installCrossplaneEventually(dc dynamic.Interface, opts BootOptions) error {
 	}
 	opts.Bus.Publish(support.InfoNotification("crossplane chart successfully installed."))
 
-	return waitForCrossplaneReady(dc)
+	return WaitForCrossplaneReady(dc)
 }
