@@ -10,13 +10,13 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type BootOptions struct {
+type InitOptions struct {
 	Config  *rest.Config
 	Bus     eventbus.Bus
 	Verbose bool
 }
 
-func Run(opts BootOptions) error {
+func Init(opts InitOptions) error {
 	dc, err := dynamic.NewForConfig(opts.Config)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func Run(opts BootOptions) error {
 	return nil
 }
 
-func installCrossplaneEventually(dc dynamic.Interface, opts BootOptions) error {
+func installCrossplaneEventually(dc dynamic.Interface, opts InitOptions) error {
 	ok, err := isCrossplaneInstalled(dc)
 	if err != nil {
 		return err

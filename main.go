@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/krateoplatformops/kube-bridge/pkg/boot"
 	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers"
+	"github.com/krateoplatformops/kube-bridge/pkg/platform"
 	"github.com/krateoplatformops/kube-bridge/pkg/support"
 	"github.com/rs/zerolog"
 	"k8s.io/client-go/rest"
@@ -102,7 +102,7 @@ func main() {
 
 	// Bootstrap krateo runtime
 	if *bootstrap {
-		err = boot.Run(boot.BootOptions{
+		err = platform.Init(platform.InitOptions{
 			Config:  cfg,
 			Verbose: *debug,
 			Bus:     bus,
