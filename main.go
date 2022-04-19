@@ -14,11 +14,14 @@ import (
 
 	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers"
-	"github.com/krateoplatformops/kube-bridge/pkg/platform"
+	"github.com/krateoplatformops/kube-bridge/pkg/handlers/secrets"
+	"github.com/krateoplatformops/kube-bridge/pkg/middlewares"
 	"github.com/krateoplatformops/kube-bridge/pkg/support"
 	"github.com/rs/zerolog"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -44,11 +47,7 @@ func main() {
 
 	loggerServiceUrl := flag.String("logger-service-url", support.EnvString("LOGGER_SERVICE_URL", ""),
 		"logger service url")
-
 	debug := flag.Bool("debug", support.EnvBool("KUBE_BRIDGE_DEBUG", true), "dump verbose output")
-
-	bootstrap := flag.Bool("bootstrap", support.EnvBool("KUBE_BRIDGE_BOOTSTRAP", true), "enable/disable Krateo runtime bootstrap")
-
 	servicePort := flag.Int("port", support.EnvInt("KUBE_BRIDGE_PORT", 8171), "port to listen on")
 
 	flag.Usage = func() {
@@ -75,7 +74,6 @@ func main() {
 
 	if log.Debug().Enabled() {
 		log.Debug().
-			Str("bootstrap", fmt.Sprintf("%t", *bootstrap)).
 			Str("debug", fmt.Sprintf("%t", *debug)).
 			Str("loggerServiceUrl", *loggerServiceUrl).
 			Str("port", fmt.Sprintf("%d", *servicePort)).
@@ -100,33 +98,42 @@ func main() {
 	eid := bus.Subscribe(support.NotificationEventID, nd)
 	defer bus.Unsubscribe(eid)
 
-	// Bootstrap krateo runtime
-	if *bootstrap {
-		err = platform.Init(platform.InitOptions{
-			Config:  cfg,
-			Verbose: *debug,
-			Bus:     bus,
-		})
-		if err != nil {
-			bus.Publish(support.ErrorNotification(err))
-			log.Fatal().Err(err).Msg("booting krateo required deps")
-		}
-	}
-
 	// Server Mux
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	// HealtZ endpoint
 	healthy := int32(0)
 	mux.Handle("/healtz", handlers.HealtHandler(&healthy))
 
-	/*
-		mux.Handle("/apply", middlewares.Logger(log)(
-			middlewares.CorrelationID(
-				handlers.ApplyHandler(cfg),
-			),
-		))
-	*/
+	// Secrets endpoint
+	//
+	// All secrets created by `kube-bridge` have the
+	// standard label `app.kubernetes.io/created-by: krateo`
+	//
+	// Methods:
+	//
+	// GET /secrets/{namespace}         ' Get All secrets (filtered by `app.kubernetes.io/created-by: krateo`)
+	// GET /secrets/{namespace}/{name}  ' Get a secret in the `namespace` with the `name`
+	// POST /secrets/{namespace}/{name} ' Create a secret in the `namespace` with the `name`
+	//                                  ' Payload: {"value": "xxxx"}
+	mux.Handle("/secrets/{namespace}/{name}", middlewares.Logger(log)(
+		middlewares.CorrelationID(
+			secrets.Create(cfg),
+		),
+	)).Methods(http.MethodPost)
+
+	mux.Handle("/secrets/{namespace}/{name}", middlewares.Logger(log)(
+		middlewares.CorrelationID(
+			secrets.GetOne(cfg),
+		),
+	)).Methods(http.MethodGet)
+
+	mux.Handle("/secrets/{namespace}/{name}", middlewares.Logger(log)(
+		middlewares.CorrelationID(
+			secrets.DeleteOne(cfg),
+		),
+	)).Methods(http.MethodDelete)
+
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *servicePort),
 		Handler:      mux,

@@ -11,117 +11,19 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: krateo-manager
+  name: krateo-kube-bridge-role
   labels:
     app.kubernetes.io/name: krateo-manage-namespaces
     app.kubernetes.io/component: control-plane
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - create
-      - get
-      - delete
-      - list
+  - apiGroups: [pkg.crossplane.io]
+    resources: [configurations]
+    verbs: [list, get, create, delete, watch]
 
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
-
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - update
-      - patch
-      - delete
-
-  - apiGroups:
-      - apiextensions.k8s.io
-    resources:
-      - customresourcedefinitions
-    verbs:
-      - "*"
-
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-
-  - apiGroups:
-      - ""
-    resources:
-      - serviceaccounts
-    verbs:
-      - "*"
-
-  - apiGroups:
-      - extensions
-      - apps
-    resources:
-      - deployments
-    verbs:
-      - get
-      - list
-      - create
-      - update
-      - patch
-      - delete
-      - watch
-  
-  - apiGroups:
-    - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-      - roles
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      # The RBAC manager may grant access it does not have.
-      - escalate
-
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-    verbs:
-      - bind
-
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterrolebindings
-    verbs:
-      - "*"
-  
-  - apiGroups:
-      - pkg.crossplane.io
-    resources:
-      - controllerconfigs
-      - providers
-    verbs:
-      - create 
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list, create]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -129,12 +31,12 @@ metadata:
   name: krateo-kube-bridge-rolebinding
   namespace: krateo-system
   labels:
-    app.kubernetes.io/name: krateo-kube-bridge-manage-namespaces
+    app.kubernetes.io/name: krateo-kube-bridge-manage-secrets
     app.kubernetes.io/component: control-plane
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: krateo-manager
+  name: krateo-kube-bridge-role
 subjects:
   - kind: ServiceAccount
     name: krateo-kube-bridge

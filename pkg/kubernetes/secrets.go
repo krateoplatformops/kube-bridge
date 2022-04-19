@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -14,6 +15,7 @@ type SecretsClient interface {
 	Get(name, namespace string, opts metav1.GetOptions) (*corev1.Secret, error)
 	Create(namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error)
 	Delete(name, namespace string, opts metav1.DeleteOptions) error
+	List(namespace string, opts metav1.ListOptions) (*corev1.SecretList, error)
 }
 
 func Secrets(c *rest.Config) (SecretsClient, error) {
@@ -80,6 +82,30 @@ func (impl *secretsClientImpl) Create(namespace string, secret *corev1.Secret, o
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
 			return impl.Get(secret.Name, namespace, metav1.GetOptions{})
+		}
+	}
+
+	return res, err
+}
+
+func (impl *secretsClientImpl) List(namespace string, opts metav1.ListOptions) (*corev1.SecretList, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
+
+	res := &corev1.SecretList{}
+
+	err := impl.client.Get().
+		Namespace(namespace).
+		Resource("secrets").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
+		Do(context.TODO()).
+		Into(res)
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			return nil, err
 		}
 	}
 
