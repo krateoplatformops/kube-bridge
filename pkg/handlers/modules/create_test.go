@@ -15,7 +15,7 @@ func TestB64(t *testing.T) {
 
 	pkgEnc := base64.StdEncoding.EncodeToString(pkg)
 
-	clm, err := ioutil.ReadFile("../../../testdata/claims.yaml")
+	clm, err := ioutil.ReadFile("../../../testdata/claim.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestB64(t *testing.T) {
 
 	m := map[string]string{
 		"package":  pkgEnc,
-		"claims":   clmEnc,
+		"claim":    clmEnc,
 		"encoding": "base64",
 	}
 

@@ -1,12 +1,14 @@
 package modules
 
 import (
-	"encoding/base64"
 	"errors"
 	"net/http"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers/utils"
 	"github.com/rs/zerolog"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -28,28 +30,49 @@ func Create(cfg *rest.Config) http.Handler {
 			return
 		}
 
-		pkg, err := base64.StdEncoding.DecodeString(sd.Package)
+		pkgObj, _, err := decodeModulePackage(sd.Package)
 		if err != nil {
-			log.Warn().Msg(err.Error())
+			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		log.Debug().Str("name", pkgObj.GetName()).Msg("decoded package data")
 
-		clm, err := base64.StdEncoding.DecodeString(sd.Claim)
+		clmObj, clmGVK, err := decodeModuleClaim(sd.Claim)
 		if err != nil {
-			log.Warn().Msg(err.Error())
+			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		log.Debug().
+			Str("group", clmGVK.Group).
+			Str("version", clmGVK.Version).
+			Str("kind", clmGVK.Kind).
+			Str("name", clmObj.GetName()).
+			Msg("decoded claim data")
 
-		err = installModulePackage(cfg, pkg)
+		dc, err := dynamic.NewForConfig(cfg)
 		if err != nil {
 			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		err = installModuleClaims(cfg, clm)
+		err = createOrUpdateResourceFromUnstructured(cfg, dc, pkgObj)
+		if err != nil {
+			log.Error().Msg(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = waitForCRDs(cfg, []*apiextensionsv1.CustomResourceDefinition{buildCRDInfo(clmGVK)})
+		if err != nil {
+			log.Error().Msg(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = createOrUpdateResourceFromUnstructured(cfg, dc, clmObj)
 		if err != nil {
 			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
