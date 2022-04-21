@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/krateoplatformops/kube-bridge/pkg/handlers"
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers/utils"
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
 	"github.com/rs/zerolog"
@@ -14,11 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/rest"
-)
-
-const (
-	createdByLabel = "app.kubernetes.io/created-by"
-	creator        = "krateo"
 )
 
 func Create(cfg *rest.Config) http.Handler {
@@ -90,7 +86,7 @@ func newSecretObj(name, namespace string, secretType corev1.SecretType) *corev1.
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				createdByLabel: creator,
+				handlers.CreatedByLabel: handlers.CreatedByValue,
 			},
 		},
 		Type: secretType,

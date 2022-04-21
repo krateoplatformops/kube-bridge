@@ -14,6 +14,7 @@ import (
 
 	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers"
+	"github.com/krateoplatformops/kube-bridge/pkg/handlers/modules"
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers/secrets"
 	"github.com/krateoplatformops/kube-bridge/pkg/middlewares"
 	"github.com/krateoplatformops/kube-bridge/pkg/support"
@@ -133,6 +134,12 @@ func main() {
 			secrets.DeleteOne(cfg),
 		),
 	)).Methods(http.MethodDelete)
+
+	mux.Handle("/apply", middlewares.Logger(log)(
+		middlewares.CorrelationID(
+			modules.Create(cfg),
+		),
+	)).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *servicePort),

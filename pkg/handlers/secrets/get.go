@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/krateoplatformops/kube-bridge/pkg/handlers"
 	"github.com/krateoplatformops/kube-bridge/pkg/kubernetes"
 	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +29,7 @@ func GetOne(cfg *rest.Config) http.Handler {
 		params := mux.Vars(r)
 
 		lst, err := kc.List(params["namespace"], metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", createdByLabel, creator),
+			LabelSelector: fmt.Sprintf("%s=%s", handlers.CreatedByLabel, handlers.CreatedByValue),
 		})
 		if err != nil {
 			log.Error().Msg(err.Error())

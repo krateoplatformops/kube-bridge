@@ -1,0 +1,53 @@
+apiVersion: templates.krateo.io/v1alpha1
+kind: aws-stack
+metadata:
+  name: aws-stack
+spec:
+  transactionId: 6256ef24b34b1397750674a5
+  dashboard:
+    description: demo stack
+    icon: fa-brands fa-aws
+    tags:
+    - aws
+    - stack
+    - infrastructure
+    - rds
+    links:
+    - url: https://github.com/maurosala/fat-squirrels
+      title: maurosala/fat-squirrels
+      icon: fa-brands fa-git
+    - url: https://kiratech.awsapps.com/start#/
+      title: AWS Console
+      icon: fa-brands fa-aws
+    plugins:
+    - name: resources
+      value: fat-squirrels
+    owner: maurosala
+  name: fat-squirrels
+  compositionSelector:
+    matchLabels:
+      platform: aws
+  eks:
+    clusterName: fat-clu
+  network:
+    networkName: fat-net
+  rds:
+    rdsRegion: eu-central-1
+    rdsDataDiskSizeGb: '10'
+    rdsInstanceClass: db.t3.micro
+    rdsEngineVersion: '13.4'
+    rdsStorageType: standard
+  fromRepo:
+    domain: github.com
+    provider: github
+    apiUrl: https://api.github.com/
+    repositoryName: krateo-template-aws-stack
+    organizationName: krateoplatformops
+    schema: https
+  toRepo:
+    domain: github.com
+    provider: github
+    apiUrl: https://api.github.com/
+    repositoryName: fat-squirrels
+    organizationName: maurosala
+    schema: https

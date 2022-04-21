@@ -1,0 +1,9 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: krateo-template-aws-stack
+spec:
+  package: ghcr.io/krateoplatformops/krateo-template-aws-stack:development
+  packagePullPolicy: Always
+  revisionActivationPolicy: Automatic
+  revisionHistoryLimit: 1
