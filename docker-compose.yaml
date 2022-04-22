@@ -1,0 +1,19 @@
+version: "3.8"
+
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  kubebridge:
+    image: ghcr.io/krateoplatformops/kube-bridge:${TAG}
+    environment:
+      - KUBECONFIG=${KUBECONFIG:-$$HOME/.kube/config}
+      - KUBE_BRIDGE_DEBUG=${KUBE_BRIDGE_DEBUG:-true}
+      - KUBE_BRIDGE_PORT=${KUBE_BRIDGE_PORT:-8171}
+    ports:
+      - "${KUBE_BRIDGE_PORT}:${KUBE_BRIDGE_PORT}"
+    #depends_on:
+    #  - redis
+    networks:
+      - app-tier

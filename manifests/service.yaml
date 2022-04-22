@@ -28,20 +28,18 @@ spec:
       containers:
       - name: kube-bridge
         image: ghcr.io/krateoplatformops/kube-bridge:0.1.0
-        # env:
+        env:
         #  - name: LOGGER_SERVICE_URL
         #    value: "http://logger-service:8080"
-        #  - name: KUBE_BRIDGE_BOOTSTRAP
-        #    value: "true"
-        #  - name: KUBE_BRIDGE_DEBUG
-        #    value: "true"
-        #  - name: KUBE_BRIDGE_PORT
-        #    value: "8171"
+          - name: KUBE_BRIDGE_DEBUG
+            value: "true"
+          - name: KUBE_BRIDGE_PORT
+            value: "8171"
         ports:
         - containerPort: 8171
         resources:
           requests:
-            memory: "32Mi"
+            memory: "128Mi"
             cpu: "50m"
           limits:
             # you can monitor memory usage using "kubectl -n krateo top pods"
@@ -59,9 +57,9 @@ metadata:
     app.kubernetes.io/component: control-plane
 spec:
   ports:
-  - port: 8171
-    targetPort: 8171
-    protocol: TCP
+    - port: 8171
+      targetPort: 8171
+      protocol: TCP
   selector:
     app.kubernetes.io/name: kube-bridge
     app.kubernetes.io/instance: krateo
