@@ -1,10 +1,13 @@
 package modules
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers/utils"
 	"github.com/rs/zerolog"
@@ -51,40 +54,13 @@ func Create(cfg *rest.Config) http.Handler {
 			Str("name", clmObj.GetName()).
 			Msg("decoded claim data")
 
-		dc, err := dynamic.NewForConfig(cfg)
-		if err != nil {
-			log.Error().Msg(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		pci := &packageAndClaimInfo{
+			pkgObj: pkgObj,
+			clmGVK: clmGVK,
+			clmObj: clmObj,
 		}
 
-		err = createOrUpdateResourceFromUnstructured(r.Context(), cfg, dc, pkgObj)
-		if err != nil {
-			log.Error().Msg(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		crdi := buildCRDInfo(clmGVK)
-
-		log.Info().
-			Str("apiVersion", crdi.APIVersion).
-			Str("kind", crdi.Spec.Names.Kind).
-			Str("plurals", crdi.Spec.Names.Plural).
-			Msg("Waiting for CRD")
-		err = waitForCRDs(cfg, []*apiextensionsv1.CustomResourceDefinition{crdi})
-		if err != nil {
-			log.Error().Msg(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		log.Info().
-			Str("apiVersion", crdi.APIVersion).
-			Str("kind", crdi.Spec.Names.Kind).
-			Str("plurals", crdi.Spec.Names.Plural).
-			Msg("CRD ready")
-
-		err = createOrUpdateResourceFromUnstructured(r.Context(), cfg, dc, clmObj)
+		err = installPackageAndClaim(r.Context(), cfg, pci)
 		if err != nil {
 			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -93,6 +69,44 @@ func Create(cfg *rest.Config) http.Handler {
 
 		w.WriteHeader(http.StatusOK)
 	})
+}
+
+type packageAndClaimInfo struct {
+	pkgObj *unstructured.Unstructured
+	clmGVK *schema.GroupVersionKind
+	clmObj *unstructured.Unstructured
+}
+
+func installPackageAndClaim(ctx context.Context, cfg *rest.Config, pci *packageAndClaimInfo) error {
+	log := zerolog.Ctx(ctx)
+	dc, err := dynamic.NewForConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	err = createOrUpdateResourceFromUnstructured(ctx, cfg, dc, pci.pkgObj)
+	if err != nil {
+		return err
+	}
+
+	crdi := buildCRDInfo(pci.clmGVK)
+
+	log.Info().
+		Str("apiVersion", crdi.APIVersion).
+		Str("kind", crdi.Spec.Names.Kind).
+		Str("plurals", crdi.Spec.Names.Plural).
+		Msg("Waiting for CRD")
+	err = waitForCRDs(cfg, []*apiextensionsv1.CustomResourceDefinition{crdi})
+	if err != nil {
+		return err
+	}
+	log.Info().
+		Str("apiVersion", crdi.APIVersion).
+		Str("kind", crdi.Spec.Names.Kind).
+		Str("plurals", crdi.Spec.Names.Plural).
+		Msg("CRD ready")
+
+	return createOrUpdateResourceFromUnstructured(ctx, cfg, dc, pci.clmObj)
 }
 
 type payload struct {
