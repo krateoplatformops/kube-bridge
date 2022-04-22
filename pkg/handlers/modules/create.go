@@ -65,12 +65,24 @@ func Create(cfg *rest.Config) http.Handler {
 			return
 		}
 
-		err = waitForCRDs(cfg, []*apiextensionsv1.CustomResourceDefinition{buildCRDInfo(clmGVK)})
+		crdi := buildCRDInfo(clmGVK)
+
+		log.Info().
+			Str("apiVersion", crdi.APIVersion).
+			Str("kind", crdi.Spec.Names.Kind).
+			Str("plurals", crdi.Spec.Names.Plural).
+			Msg("Waiting for CRD")
+		err = waitForCRDs(cfg, []*apiextensionsv1.CustomResourceDefinition{crdi})
 		if err != nil {
 			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		log.Info().
+			Str("apiVersion", crdi.APIVersion).
+			Str("kind", crdi.Spec.Names.Kind).
+			Str("plurals", crdi.Spec.Names.Plural).
+			Msg("CRD ready")
 
 		err = createOrUpdateResourceFromUnstructured(r.Context(), cfg, dc, clmObj)
 		if err != nil {
