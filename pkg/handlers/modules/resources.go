@@ -3,6 +3,7 @@ package modules
 import (
 	"context"
 
+	"github.com/rs/zerolog"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ import (
 	"k8s.io/client-go/restmapper"
 )
 
-func createResourceFromYAML(rc *rest.Config, dc dynamic.Interface, src []byte) error {
+func createResourceFromYAML(ctx context.Context, rc *rest.Config, dc dynamic.Interface, src []byte) error {
 	obj := &unstructured.Unstructured{}
 
 	// decode YAML into unstructured.Unstructured
@@ -26,10 +27,12 @@ func createResourceFromYAML(rc *rest.Config, dc dynamic.Interface, src []byte) e
 		return err
 	}
 
-	return createOrUpdateResourceFromUnstructured(rc, dc, obj)
+	return createOrUpdateResourceFromUnstructured(ctx, rc, dc, obj)
 }
 
-func createOrUpdateResourceFromUnstructured(rc *rest.Config, dc dynamic.Interface, obj *unstructured.Unstructured) error {
+func createOrUpdateResourceFromUnstructured(ctx context.Context, rc *rest.Config, dc dynamic.Interface, obj *unstructured.Unstructured) error {
+	log := zerolog.Ctx(ctx)
+
 	gvk := obj.GroupVersionKind()
 
 	mapping, err := findGVR(&gvk, rc)
@@ -43,6 +46,14 @@ func createOrUpdateResourceFromUnstructured(rc *rest.Config, dc dynamic.Interfac
 	if err == nil {
 		obj.SetResourceVersion(res.GetResourceVersion())
 		_, err = cli.Update(context.Background(), obj, metav1.UpdateOptions{})
+		if err == nil {
+			log.Info().
+				Str("group", gvk.Group).
+				Str("version", gvk.Version).
+				Str("kind", gvk.Kind).
+				Str("name", obj.GetName()).
+				Msg("resource successfully updated")
+		}
 		return err
 	} else {
 		if !errors.IsNotFound(err) {
@@ -51,6 +62,16 @@ func createOrUpdateResourceFromUnstructured(rc *rest.Config, dc dynamic.Interfac
 	}
 
 	_, err = cli.Create(context.Background(), obj, metav1.CreateOptions{})
+	if err == nil {
+		if err == nil {
+			log.Info().
+				Str("group", gvk.Group).
+				Str("version", gvk.Version).
+				Str("kind", gvk.Kind).
+				Str("name", obj.GetName()).
+				Msg("resource successfully created")
+		}
+	}
 	return err
 
 }

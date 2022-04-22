@@ -36,7 +36,7 @@ func Create(cfg *rest.Config) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		log.Debug().Str("name", pkgObj.GetName()).Msg("decoded package data")
+		log.Info().Str("name", pkgObj.GetName()).Msg("decoded package data")
 
 		clmObj, clmGVK, err := decodeModuleClaim(sd.Claim)
 		if err != nil {
@@ -44,7 +44,7 @@ func Create(cfg *rest.Config) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		log.Debug().
+		log.Info().
 			Str("group", clmGVK.Group).
 			Str("version", clmGVK.Version).
 			Str("kind", clmGVK.Kind).
@@ -58,7 +58,7 @@ func Create(cfg *rest.Config) http.Handler {
 			return
 		}
 
-		err = createOrUpdateResourceFromUnstructured(cfg, dc, pkgObj)
+		err = createOrUpdateResourceFromUnstructured(r.Context(), cfg, dc, pkgObj)
 		if err != nil {
 			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,7 +72,7 @@ func Create(cfg *rest.Config) http.Handler {
 			return
 		}
 
-		err = createOrUpdateResourceFromUnstructured(cfg, dc, clmObj)
+		err = createOrUpdateResourceFromUnstructured(r.Context(), cfg, dc, clmObj)
 		if err != nil {
 			log.Error().Msg(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)

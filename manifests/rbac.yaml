@@ -17,9 +17,17 @@ metadata:
     app.kubernetes.io/component: control-plane
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
+  - apiGroups: ["modules.krateo.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  
+  - apiGroups: ["templates.krateo.io"]
+    resources: ["*"]
+    verbs: ["*"]
+
   - apiGroups: ["pkg.crossplane.io"]
-    resources: [configurations]
-    verbs: ["list", "get", "create", "delete", "watch"]
+    resources: ["configurations"]
+    verbs: ["list", "get", "create", "delete", "update", "watch"]
 
   - apiGroups: [""]
     resources: ["secrets"]

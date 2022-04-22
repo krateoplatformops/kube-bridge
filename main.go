@@ -73,14 +73,6 @@ func main() {
 		Timestamp().
 		Logger()
 
-	if log.Debug().Enabled() {
-		log.Debug().
-			Str("debug", fmt.Sprintf("%t", *debug)).
-			Str("loggerServiceUrl", *loggerServiceUrl).
-			Str("port", fmt.Sprintf("%d", *servicePort)).
-			Msg("configuration values")
-	}
-
 	// Kubernetes configuration
 	var cfg *rest.Config
 	var err error
@@ -91,6 +83,15 @@ func main() {
 	}
 	if err != nil {
 		log.Fatal().Err(err).Msg("building kube config")
+	}
+
+	if log.Debug().Enabled() {
+		log.Debug().
+			Str("debug", fmt.Sprintf("%t", *debug)).
+			Str("loggerServiceUrl", *loggerServiceUrl).
+			Str("port", fmt.Sprintf("%d", *servicePort)).
+			Str("@cluster", cfg.Host).
+			Msg("configuration values")
 	}
 
 	// Internal event bus for sending notifications

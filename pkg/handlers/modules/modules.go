@@ -1,17 +1,14 @@
 package modules
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"strings"
 
-	"github.com/rs/zerolog"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -19,57 +16,6 @@ const (
 	moduleConfigurationGroupAndKind = "Configuration.pkg.crossplane.io"
 	moduleClaimsGroupSuffix         = "krateo.io"
 )
-
-func installModulePackage(ctx context.Context, rc *rest.Config, data []byte) error {
-	log := zerolog.Ctx(ctx)
-
-	dc, err := dynamic.NewForConfig(rc)
-	if err != nil {
-		return err
-	}
-
-	obj := &unstructured.Unstructured{}
-	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	_, gvk, err := dec.Decode(data, nil, obj)
-	if err != nil {
-		return err
-	}
-
-	if gvk.GroupKind().String() != moduleConfigurationGroupAndKind {
-		return fmt.Errorf("kind: %s in apiGroup: %s is not allowed", gvk.Kind, gvk.Group)
-	}
-	log.Debug().
-		Str("group", gvk.Group).
-		Str("version", gvk.Version).
-		Str("kind", gvk.Kind).
-		Str("name", obj.GetName()).
-		Msg("installing package")
-	err = createOrUpdateResourceFromUnstructured(rc, dc, obj)
-	if err != nil {
-		return err
-	}
-
-	log.Debug().
-		Str("group", gvk.Group).
-		Str("version", gvk.Version).
-		Str("kind", gvk.Kind).
-		Str("name", obj.GetName()).
-		Msg("waiting for package crds")
-
-	err = waitForModuleCRDs(rc, gvk)
-	if err != nil {
-		return err
-	}
-
-	log.Debug().
-		Str("group", gvk.Group).
-		Str("version", gvk.Version).
-		Str("kind", gvk.Kind).
-		Str("name", obj.GetName()).
-		Msg("package installed")
-
-	return nil
-}
 
 func decodeModulePackage(s string) (*unstructured.Unstructured, *schema.GroupVersionKind, error) {
 	data, err := base64.StdEncoding.DecodeString(s)
@@ -117,31 +63,6 @@ func decodeUnstructured(data []byte) (*unstructured.Unstructured, *schema.GroupV
 	}
 
 	return obj, gvk, nil
-}
-
-func installModuleClaims(ctx context.Context, rc *rest.Config, data []byte) error {
-	dc, err := dynamic.NewForConfig(rc)
-	if err != nil {
-		return err
-	}
-
-	obj := &unstructured.Unstructured{}
-	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	_, gvk, err := dec.Decode(data, nil, obj)
-	if err != nil {
-		return err
-	}
-
-	if g := gvk.GroupKind().Group; !strings.HasSuffix(g, moduleClaimsGroupSuffix) {
-		return fmt.Errorf("apiGroup: %s is not allowed", g)
-	}
-
-	err = createOrUpdateResourceFromUnstructured(rc, dc, obj)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func buildCRDInfo(gvk *schema.GroupVersionKind) *apiextensionsv1.CustomResourceDefinition {
