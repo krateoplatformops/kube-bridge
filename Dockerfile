@@ -34,7 +34,7 @@ FROM scratch
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-COPY --from=builder ./bin/service /bin/service
+COPY --from=builder ./bin/service /service
 
 # Metadata params
 ARG VERSION
@@ -57,4 +57,4 @@ ARG KUBE_BRIDGE_PORT
 
 EXPOSE ${KUBE_BRIDGE_PORT}
 
-ENTRYPOINT ["/bin/service"]
+ENTRYPOINT ["/service"]
