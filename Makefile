@@ -75,7 +75,7 @@ image.build: ### Build the Docker image
 	--build-arg LAST_COMMIT="$(LAST_COMMIT)" \
 	--build-arg PROJECT_NAME="$(PROJECT_NAME)" \
 	--build-arg VENDOR="$(VENDOR)" .
-	@$(DOCKER) rmi -f $$(docker images -f "dangling=true" -q)
+
 
 .PHONY: image.push
 image.push: ### Push the image to the Docker Registry
