@@ -5,19 +5,22 @@ on:
     tags: [ '[0-9]+.[0-9]+.[0-9]+' ]
 
 jobs:
-  package:
-    runs-on: ubuntu-20.04
+  release:
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
     steps:
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      - name: Build
-        run: make image.build
-      
       - name: Login to CR
         uses: docker/login-action@v1
         with:
@@ -25,7 +28,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Package
-        run: make image.push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: make image.build
+      
+#      - name: Package
+#        run: make image.push
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

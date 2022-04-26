@@ -11,6 +11,8 @@ DOCKER_REGISTRY := ghcr.io/$(ORG_NAME)
 TARGET_OS := linux
 TARGET_ARCH := amd64
 
+PLATFORM := "linux/amd64,darwin/arm64"
+
 # Tools
 KIND=$(shell which kind)
 LINT=$(shell which golangci-lint)
@@ -67,7 +69,9 @@ kind.down: ### Shuts down the KinD cluster
 
 .PHONY: image.build
 image.build: ### Build the Docker image
-	@$(DOCKER) build -t "$(DOCKER_REGISTRY)/$(PROJECT_NAME):$(VERSION)" \
+	echo "🏗    Building image '$(PROJECT_NAME):$(VERSION)' ..."
+	@$(DOCKER) buildx create --name "$(PROJECT_NAME)" --use --append
+	@$(DOCKER) buildx build --platform "$(PLATFORM)" --push -t "$(DOCKER_REGISTRY)/$(PROJECT_NAME):$(VERSION)" \
 	--build-arg LD_FLAGS="$(LD_FLAGS)" \
 	--build-arg KUBE_BRIDGE_PORT=8171 \
 	--build-arg VERSION="$(VERSION)" \

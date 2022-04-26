@@ -24,10 +24,8 @@ COPY . .
 
 # Build
 RUN make deps && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on \
-    go build -tags netgo -a -v -ldflags "$LD_FLAGS" -o /bin/service ./main.go && \
-    strip /bin/service && \
-    /usr/local/bin/upx -9 /bin/service
+  make build && \
+  /usr/local/bin/upx -9 /bin/service
 
 # Deployment environment
 # ----------------------
