@@ -1,6 +1,6 @@
 # Build environment
 # -----------------
-FROM golang:1.18.1-alpine3.15 as builder
+FROM golang:1.18.0-bullseye as builder
 LABEL stage=builder
 
 ARG upx_version=3.96
