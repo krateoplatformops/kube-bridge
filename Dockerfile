@@ -28,7 +28,7 @@ FROM scratch
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-COPY --from=builder /bin/service /service
+COPY --from=builder /src/bin/service /service
 
 # Metadata params
 ARG VERSION
