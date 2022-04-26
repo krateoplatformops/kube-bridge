@@ -8,10 +8,7 @@ VENDOR := Kiratech
 # Github Container Registry
 DOCKER_REGISTRY := ghcr.io/$(ORG_NAME)
 
-TARGET_OS := linux
-TARGET_ARCH := amd64
-
-PLATFORM := "linux/amd64,darwin/arm64"
+PLATFORM := "linux/amd64,linux/arm64,linux/arm"
 
 # Tools
 KIND=$(shell which kind)
@@ -54,9 +51,7 @@ print.vars: ### Print all the build variables
 	@echo LAST_COMMIT=$(LAST_COMMIT)
 	@echo VERSION=$(VERSION)
 	@echo BUILD_DATE=$(BUILD_DATE)
-	@echo TARGET_OS=$(TARGET_OS)
-	@echo TARGET_ARCH=$(TARGET_ARCH)
-	@echo DOCKER_REGISTRY=$(DOCKER_REGISTRY)
+	@echo PLATFORM=$(PLATFORM)
 
 .PHONY: kind.up
 kind.up: ### Starts a KinD cluster for local development
