@@ -104,5 +104,5 @@ clean: ### Clean build files
 
 .PHONY: build
 build: ### Build binary
-	@go build -tags netgo -a -v -ldflags "${LD_FLAGS}" -o ./bin/service ./main.go
+	@go build -tags netgo -a -v -ldflags "${LD_FLAGS}" -o /bin/service ./main.go
 	@chmod +x ./bin/*
