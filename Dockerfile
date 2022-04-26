@@ -25,7 +25,7 @@ COPY . .
 # Build
 RUN make deps && \
   make build && \
-  /usr/local/bin/upx -9 /bin/service
+  /usr/local/bin/upx -9 ./bin/service
 
 # Deployment environment
 # ----------------------
