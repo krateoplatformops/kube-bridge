@@ -19,8 +19,7 @@ WORKDIR /src
 COPY . .
 
 # Build
-RUN make deps && \
-  make build &&
+RUN make deps && make build
 
 # Deployment environment
 # ----------------------
