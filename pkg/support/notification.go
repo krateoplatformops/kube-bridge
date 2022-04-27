@@ -1,51 +1,68 @@
 package support
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
-	"github.com/rs/zerolog"
 )
 
 const (
 	NotificationEventID = eventbus.EventID("notify.event")
+	reqIdKey            = "correlation_id"
 )
 
-func InfoNotification(msg string) *Notification {
-	return &Notification{
+func InfoNotification(ctx context.Context, msg string) *Notification {
+	ret := &Notification{
 		Level:   "info",
-		Service: ServiceName,
+		Source:  ServiceName,
 		Time:    time.Now().Unix(),
 		Message: msg,
 	}
+
+	reqId, ok := ctx.Value(reqIdKey).(string)
+	if ok {
+		ret.CorrelationId = reqId
+	}
+
+	return ret
 }
 
-func ErrorNotification(err error) *Notification {
-	return &Notification{
+func ErrorNotification(ctx context.Context, err error) *Notification {
+	ret := &Notification{
 		Level:   "error",
-		Service: ServiceName,
+		Source:  ServiceName,
 		Time:    time.Now().Unix(),
-		Error:   err.Error(),
+		Message: err.Error(),
 	}
+
+	reqId, ok := ctx.Value(reqIdKey).(string)
+	if ok {
+		ret.CorrelationId = reqId
+	}
+
+	return ret
 }
 
 type Notification struct {
-	Level   string `json:"level"`
-	Time    int64  `json:"time"`
-	Service string `json:"service"`
-	Message string `json:"message,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Level         string `json:"level"`
+	Time          int64  `json:"time"`
+	Message       string `json:"message"`
+	Source        string `json:"source"`
+	Reason        string `json:"reason"`
+	CorrelationId string `json:"transactionId"`
 }
 
 func (e *Notification) EventID() eventbus.EventID {
 	return NotificationEventID
 }
 
-func NotificationDispatcher(addr string, log *zerolog.Logger) eventbus.EventHandler {
-
+func NotificationDispatcher(addr string) eventbus.EventHandler {
 	return func(e eventbus.Event) {
 		if e.EventID() != NotificationEventID {
 			return
@@ -56,12 +73,24 @@ func NotificationDispatcher(addr string, log *zerolog.Logger) eventbus.EventHand
 
 			dat, err := json.Marshal(evt)
 			if err != nil {
-				log.Error().Err(err).Msg("")
+				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
+				return
 			}
 
-			// TODO POST event
-			fmt.Fprintln(os.Stdout, string(dat))
+			ctx, cncl := context.WithTimeout(context.Background(), time.Second*40)
+			defer cncl()
 
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, addr, bytes.NewBuffer(dat))
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
+				return
+			}
+
+			_, err = http.DefaultClient.Do(req)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
+				return
+			}
 		}()
 	}
 }

@@ -95,9 +95,9 @@ func main() {
 	}
 
 	// Internal event bus for sending notifications
-	nd := support.NotificationDispatcher(*loggerServiceUrl, &log)
 	bus := eventbus.New()
-	eid := bus.Subscribe(support.NotificationEventID, nd)
+	eid := bus.Subscribe(support.NotificationEventID,
+		support.NotificationDispatcher(*loggerServiceUrl))
 	defer bus.Unsubscribe(eid)
 
 	// Server Mux
@@ -138,7 +138,7 @@ func main() {
 
 	mux.Handle("/apply", middlewares.Logger(log)(
 		middlewares.CorrelationID(
-			modules.Create(cfg),
+			modules.Create(cfg, bus),
 		),
 	)).Methods(http.MethodPost)
 
@@ -164,7 +164,6 @@ func main() {
 		atomic.StoreInt32(&healthy, 1)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal().Err(err).Msgf("could not listen on %s", server.Addr)
-			support.ErrorNotification(err)
 		}
 	}()
 

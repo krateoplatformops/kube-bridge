@@ -1,0 +1,8 @@
+{
+    "level": "info",
+    "time": 1650981312,
+    "message": "Hello World!",
+    "reason": "BeerNeeded",
+    "source": "kube-bridge",
+    "transactionId": "xxx-aaa-yyy"
+}

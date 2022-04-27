@@ -3,19 +3,22 @@ package modules
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
 	"github.com/krateoplatformops/kube-bridge/pkg/handlers/utils"
+	"github.com/krateoplatformops/kube-bridge/pkg/support"
 	"github.com/rs/zerolog"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
-func Create(cfg *rest.Config) http.Handler {
+func Create(cfg *rest.Config, bus eventbus.Bus) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := zerolog.Ctx(r.Context())
 
@@ -60,12 +63,18 @@ func Create(cfg *rest.Config) http.Handler {
 			clmObj: clmObj,
 		}
 
-		err = installPackageAndClaim(r.Context(), cfg, pci)
-		if err != nil {
-			log.Error().Msg(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		go func() {
+			err = installPackageAndClaim(r.Context(), cfg, pci)
+			if err != nil {
+				log.Error().Msg(err.Error())
+				bus.Publish(support.ErrorNotification(r.Context(), err))
+				//http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			msg := fmt.Sprintf("package: %s and claim: %s successfully installed", pkgObj.GetName(), clmObj.GetName())
+			bus.Publish(support.InfoNotification(r.Context(), msg))
+		}()
 
 		w.WriteHeader(http.StatusOK)
 	})
