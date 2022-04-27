@@ -27,7 +27,7 @@ spec:
       serviceAccountName: krateo-kube-bridge
       containers:
       - name: kube-bridge
-        image: ghcr.io/krateoplatformops/kube-bridge:0.1.4
+        image: ghcr.io/krateoplatformops/kube-bridge:0.2.0
         env:
         #  - name: LOGGER_SERVICE_URL
         #    value: "http://logger-service:8080"
