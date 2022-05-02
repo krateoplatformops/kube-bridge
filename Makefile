@@ -15,6 +15,7 @@ KIND=$(shell which kind)
 LINT=$(shell which golangci-lint)
 KUBECTL=$(shell which kubectl)
 DOCKER=$(shell which docker)
+HELM=$(shell which helm)
 
 KIND_CLUSTER_NAME ?= local-dev
 KUBECONFIG ?= $(HOME)/.kube/config
@@ -104,5 +105,10 @@ clean: ### Clean build files
 
 .PHONY: build
 build: ### Build binary
-	@go build -tags netgo -a -v -ldflags "${LD_FLAGS}" -o ./bin/service ./main.go
+	CGO_ENABLED=0 @go build -tags netgo -a -v -ldflags "${LD_FLAGS}" -o ./bin/service ./main.go
 	@chmod +x ./bin/*
+
+.PHONY: chart
+chart: ### Build the Helm chart for this service
+	@$(HELM) package chart --destination ./deploy
+

@@ -1,0 +1,15 @@
+{{- if .Values.service.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kube-bridge.name" . }}
+  labels:
+    {{- include "kube-bridge.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: 8171
+      targetPort: 8171
+      protocol: TCP
+  selector:
+    {{- include "kube-bridge.selectorLabels" . | nindent 4 }}
+{{- end }}
