@@ -18,16 +18,16 @@ With [kind](https://github.com/kubernetes-sigs/kind) up and running, install [kr
 $ krateo init
 ```
 
-Apply [RBAC permissions](./manifests/rbac.yaml) for this service:
+Generate the Helm chart:
 
 ```sh
-$ kubectl apply -f manifests/rbac.yaml -n krateo-system
+$ make chart
 ```
 
-[Deploy the service](./manifests/service.yaml):
+Deploy the service:
 
 ```sh
-$ kubectl apply -f manifests/service.yaml -n krateo-system
+$ make deploy
 ```
 
 To be able to invoke this service API using [`curl`](https://github.com/curl/curl) from your machine, open another terminal and type:

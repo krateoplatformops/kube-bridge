@@ -112,3 +112,6 @@ build: ### Build binary
 chart: ### Build the Helm chart for this service
 	@$(HELM) package chart --destination ./deploy
 
+.PHONY: deploy
+deploy: chart ### Deploy the service using the generated Helm chart
+	@$(HELM) install kubebridge deploy/kube-bridge-0.1.0.tgz  --namespace krateo-system --create-namespace
