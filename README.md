@@ -3,6 +3,16 @@
 Krateo Control Plane Kubernetes Bridge.
 
 ---
+## How to install in your cluster
+
+```sh
+$ helm install kubebridge --namespace krateo-system --create-namespace \
+     https://github.com/krateoplatformops/kube-bridge/blob/main/deploy/kube-bridge-VERSION.tgz?raw=true 
+```
+
+Replace `VERSION` with one of [tagged image version](./pkgs/container/kube-bridge).
+
+---
 
 ## How to try locally for development
 
