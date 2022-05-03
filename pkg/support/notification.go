@@ -76,6 +76,7 @@ func NotificationDispatcher(addr string) eventbus.EventHandler {
 				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
 				return
 			}
+			fmt.Fprintf(os.Stderr, "==> %s <==", dat)
 
 			ctx, cncl := context.WithTimeout(context.Background(), time.Second*40)
 			defer cncl()
@@ -85,6 +86,7 @@ func NotificationDispatcher(addr string) eventbus.EventHandler {
 				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
 				return
 			}
+			req.Header.Set("Content-Type", "application/json")
 
 			_, err = http.DefaultClient.Do(req)
 			if err != nil {
