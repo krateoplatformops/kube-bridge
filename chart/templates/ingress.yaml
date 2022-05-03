@@ -1,0 +1,21 @@
+{{- if .Values.service.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kube-bridge-ingress
+  labels:
+  annotations:
+    kubernetes.io/ingress.class: 'kong'
+spec:
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          - path: /*
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "kube-bridge.name" . }}
+                port:
+                  number: 8171
+{{- end }}
