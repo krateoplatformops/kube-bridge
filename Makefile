@@ -16,11 +16,12 @@ LINT=$(shell which golangci-lint)
 KUBECTL=$(shell which kubectl)
 DOCKER=$(shell which docker)
 HELM=$(shell which helm)
+SED=$(shell which sed)
 
 KIND_CLUSTER_NAME ?= local-dev
 KUBECONFIG ?= $(HOME)/.kube/config
 
-VERSION := $(shell git describe --dirty --always --tags | sed 's/-/./2' | sed 's/-/./2')
+VERSION := $(shell git describe --always --tags | sed 's/-/./2' | sed 's/-/./2')
 ifndef VERSION
 VERSION := 0.0.0
 endif
@@ -111,6 +112,8 @@ build: ### Build binary
 .PHONY: chart
 chart: ### Build the Helm chart for this service
 	@rm deploy/*.tgz
+	@$(SED) -E -i "s/version:\s+[0-9]\.[0-9]\.[0-9]/version: $(VERSION)/g" chart/Chart.yaml
+	@$(SED) -E -i "s/appVersion:\s+[0-9]\.[0-9]\.[0-9]/appVersion: $(VERSION)/g" chart/Chart.yaml
 	@$(HELM) package chart --destination ./deploy
 
 .PHONY: deploy
