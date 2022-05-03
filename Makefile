@@ -110,6 +110,7 @@ build: ### Build binary
 
 .PHONY: chart
 chart: ### Build the Helm chart for this service
+	@rm deploy/*.tgz
 	@$(HELM) package chart --destination ./deploy
 
 .PHONY: deploy

@@ -53,4 +53,4 @@ demo.yaml
 # *.gif
 .dccache
 secret.txt
-**/*.tgz
+# **/*.tgz

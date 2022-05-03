@@ -4,8 +4,8 @@ description: Helm Chart for Krateo Kube Bridge service
 type: application
 icon: "https://github.com/projectkerberus/kerberus-dashboard/blob/main/docs/media/square_black_logo.png"
 
-version: 0.1.0
-appVersion: 0.2.2
+version: 0.2.3
+appVersion: 0.2.3
 
 maintainers:
   - name: Luca Sepe
