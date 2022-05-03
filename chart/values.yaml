@@ -16,6 +16,8 @@ image:
 service:
   enabled: true   # Creates a Kubernetes Service for the kube-bridge
 
+host: bridge.krateo.site
+
 nameOverride: ""
 fullnameOverride: ""
 
