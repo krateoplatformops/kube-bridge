@@ -14,36 +14,46 @@ import (
 
 const (
 	NotificationEventID = eventbus.EventID("notify.event")
-	reqIdKey            = "correlation_id"
+	trIdKey             = "transactionId"
 )
 
-func InfoNotification(ctx context.Context, msg string) *Notification {
+const (
+	ReasonWaitForResource = "WaitForResource"
+	ReasonSuccess         = "Success"
+	ReasonFailure         = "Failure"
+	ReasonResourceUpdated = "ResourceUpdated"
+	ReasonResourceCreated = "ResourceCreated"
+)
+
+func InfoNotification(ctx context.Context, rsn, msg string) *Notification {
 	ret := &Notification{
 		Level:   "info",
 		Source:  ServiceName,
 		Time:    time.Now().Unix(),
+		Reason:  rsn,
 		Message: msg,
 	}
 
-	reqId, ok := ctx.Value(reqIdKey).(string)
+	trId, ok := ctx.Value(trIdKey).(string)
 	if ok {
-		ret.CorrelationId = reqId
+		ret.TransactionId = trId
 	}
 
 	return ret
 }
 
-func ErrorNotification(ctx context.Context, err error) *Notification {
+func ErrorNotification(ctx context.Context, rsn string, err error) *Notification {
 	ret := &Notification{
 		Level:   "error",
 		Source:  ServiceName,
 		Time:    time.Now().Unix(),
+		Reason:  rsn,
 		Message: err.Error(),
 	}
 
-	reqId, ok := ctx.Value(reqIdKey).(string)
+	trId, ok := ctx.Value(trIdKey).(string)
 	if ok {
-		ret.CorrelationId = reqId
+		ret.TransactionId = trId
 	}
 
 	return ret
@@ -55,7 +65,7 @@ type Notification struct {
 	Message       string `json:"message"`
 	Source        string `json:"source"`
 	Reason        string `json:"reason"`
-	CorrelationId string `json:"transactionId"`
+	TransactionId string `json:"transactionId"`
 }
 
 func (e *Notification) EventID() eventbus.EventID {
@@ -73,7 +83,7 @@ func NotificationDispatcher(addr string) eventbus.EventHandler {
 
 			dat, err := json.Marshal(evt)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
+				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.TransactionId, err.Error())
 				return
 			}
 			fmt.Fprintf(os.Stderr, "==> %s <==", dat)
@@ -83,14 +93,14 @@ func NotificationDispatcher(addr string) eventbus.EventHandler {
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodPost, addr, bytes.NewBuffer(dat))
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
+				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.TransactionId, err.Error())
 				return
 			}
 			req.Header.Set("Content-Type", "application/json")
 
 			_, err = http.DefaultClient.Do(req)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.CorrelationId, err.Error())
+				fmt.Fprintf(os.Stderr, "reqId: %s - error: %s", evt.TransactionId, err.Error())
 				return
 			}
 		}()

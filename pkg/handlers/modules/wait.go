@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultPollInterval = 500 * time.Millisecond
-	defaultMaxWait      = 3 * time.Minute
+	defaultMaxWait      = 5 * time.Minute
 )
 
 // waitForCRDs waits for the CRDs to appear in discovery.

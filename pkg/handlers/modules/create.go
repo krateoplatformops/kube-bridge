@@ -64,16 +64,16 @@ func Create(cfg *rest.Config, bus eventbus.Bus) http.Handler {
 		}
 
 		go func() {
-			err = installPackageAndClaim(r.Context(), cfg, pci)
+			err = installPackageAndClaim(r.Context(), bus, cfg, pci)
 			if err != nil {
 				log.Error().Msg(err.Error())
-				bus.Publish(support.ErrorNotification(r.Context(), err))
+				bus.Publish(support.ErrorNotification(r.Context(), support.ReasonFailure, err))
 				//http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
 			msg := fmt.Sprintf("package: %s and claim: %s successfully installed", pkgObj.GetName(), clmObj.GetName())
-			bus.Publish(support.InfoNotification(r.Context(), msg))
+			bus.Publish(support.InfoNotification(r.Context(), support.ReasonSuccess, msg))
 		}()
 
 		w.WriteHeader(http.StatusOK)
@@ -86,19 +86,22 @@ type packageAndClaimInfo struct {
 	clmObj *unstructured.Unstructured
 }
 
-func installPackageAndClaim(ctx context.Context, cfg *rest.Config, pci *packageAndClaimInfo) error {
+func installPackageAndClaim(ctx context.Context, bus eventbus.Bus, cfg *rest.Config, pci *packageAndClaimInfo) error {
 	log := zerolog.Ctx(ctx)
 	dc, err := dynamic.NewForConfig(cfg)
 	if err != nil {
 		return err
 	}
 
-	err = createOrUpdateResourceFromUnstructured(ctx, cfg, dc, pci.pkgObj)
+	err = createOrUpdateResourceFromUnstructured(ctx, bus, cfg, dc, pci.pkgObj)
 	if err != nil {
 		return err
 	}
 
 	crdi := buildCRDInfo(pci.clmGVK)
+
+	msg := fmt.Sprintf("Waiting for Resource (apiVersion: %s, kind: %s)", crdi.APIVersion, crdi.Spec.Names.Kind)
+	bus.Publish(support.InfoNotification(ctx, support.ReasonWaitForResource, msg))
 
 	log.Info().
 		Str("apiVersion", crdi.APIVersion).
@@ -115,7 +118,10 @@ func installPackageAndClaim(ctx context.Context, cfg *rest.Config, pci *packageA
 		Str("plurals", crdi.Spec.Names.Plural).
 		Msg("CRD ready")
 
-	return createOrUpdateResourceFromUnstructured(ctx, cfg, dc, pci.clmObj)
+	msg = fmt.Sprintf("Resource ready (apiVersion: %s, kind: %s)", crdi.APIVersion, crdi.Spec.Names.Kind)
+	bus.Publish(support.InfoNotification(ctx, support.ReasonSuccess, msg))
+
+	return createOrUpdateResourceFromUnstructured(ctx, bus, cfg, dc, pci.clmObj)
 }
 
 type payload struct {

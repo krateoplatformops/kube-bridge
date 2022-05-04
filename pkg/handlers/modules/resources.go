@@ -2,7 +2,10 @@ package modules
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
+	"github.com/krateoplatformops/kube-bridge/pkg/support"
 	"github.com/rs/zerolog"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,7 +20,7 @@ import (
 	"k8s.io/client-go/restmapper"
 )
 
-func createResourceFromYAML(ctx context.Context, rc *rest.Config, dc dynamic.Interface, src []byte) error {
+func createResourceFromYAML(ctx context.Context, bus eventbus.Bus, rc *rest.Config, dc dynamic.Interface, src []byte) error {
 	obj := &unstructured.Unstructured{}
 
 	// decode YAML into unstructured.Unstructured
@@ -27,10 +30,10 @@ func createResourceFromYAML(ctx context.Context, rc *rest.Config, dc dynamic.Int
 		return err
 	}
 
-	return createOrUpdateResourceFromUnstructured(ctx, rc, dc, obj)
+	return createOrUpdateResourceFromUnstructured(ctx, bus, rc, dc, obj)
 }
 
-func createOrUpdateResourceFromUnstructured(ctx context.Context, rc *rest.Config, dc dynamic.Interface, obj *unstructured.Unstructured) error {
+func createOrUpdateResourceFromUnstructured(ctx context.Context, bus eventbus.Bus, rc *rest.Config, dc dynamic.Interface, obj *unstructured.Unstructured) error {
 	log := zerolog.Ctx(ctx)
 
 	gvk := obj.GroupVersionKind()
@@ -53,6 +56,9 @@ func createOrUpdateResourceFromUnstructured(ctx context.Context, rc *rest.Config
 				Str("kind", gvk.Kind).
 				Str("name", obj.GetName()).
 				Msg("resource successfully updated")
+
+			msg := fmt.Sprintf("Resource successfully updated (apiGroup: %s, kind: %s)", gvk.Group, gvk.Kind)
+			bus.Publish(support.InfoNotification(ctx, support.ReasonResourceUpdated, msg))
 		}
 		return err
 	} else {
@@ -70,6 +76,9 @@ func createOrUpdateResourceFromUnstructured(ctx context.Context, rc *rest.Config
 				Str("kind", gvk.Kind).
 				Str("name", obj.GetName()).
 				Msg("resource successfully created")
+
+			msg := fmt.Sprintf("Resource successfully created (apiGroup: %s, kind: %s)", gvk.Group, gvk.Kind)
+			bus.Publish(support.InfoNotification(ctx, support.ReasonResourceCreated, msg))
 		}
 	}
 	return err
