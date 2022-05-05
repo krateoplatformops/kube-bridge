@@ -14,7 +14,7 @@ import (
 
 const (
 	NotificationEventID = eventbus.EventID("notify.event")
-	trIdKey             = "transactionId"
+	trIdKey             = "developmentId"
 )
 
 const (
@@ -65,7 +65,7 @@ type Notification struct {
 	Message       string `json:"message"`
 	Source        string `json:"source"`
 	Reason        string `json:"reason"`
-	TransactionId string `json:"transactionId"`
+	TransactionId string `json:"developmentId"`
 }
 
 func (e *Notification) EventID() eventbus.EventID {
