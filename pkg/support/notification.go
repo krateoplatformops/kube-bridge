@@ -65,7 +65,7 @@ type Notification struct {
 	Message       string `json:"message"`
 	Source        string `json:"source"`
 	Reason        string `json:"reason"`
-	TransactionId string `json:"developmentId"`
+	TransactionId string `json:"deploymentId"`
 }
 
 func (e *Notification) EventID() eventbus.EventID {
