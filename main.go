@@ -105,7 +105,9 @@ func main() {
 
 	// HealtZ endpoint
 	healthy := int32(0)
-	mux.Handle("/healtz", handlers.HealtHandler(&healthy))
+	mux.Handle("/ping", middlewares.CorrelationID(
+		handlers.HealtHandler(&healthy, bus),
+	))
 
 	// Secrets endpoint
 	//

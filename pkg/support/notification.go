@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/krateoplatformops/kube-bridge/pkg/eventbus"
+	"github.com/krateoplatformops/kube-bridge/pkg/middlewares"
 )
 
 const (
 	NotificationEventID = eventbus.EventID("notify.event")
-	trIdKey             = "deploymentId"
 )
 
 const (
@@ -23,6 +23,7 @@ const (
 	ReasonFailure         = "Failure"
 	ReasonResourceUpdated = "ResourceUpdated"
 	ReasonResourceCreated = "ResourceCreated"
+	ReasonPing            = "Ping"
 )
 
 func InfoNotification(ctx context.Context, rsn, msg string) *Notification {
@@ -34,7 +35,7 @@ func InfoNotification(ctx context.Context, rsn, msg string) *Notification {
 		Message: msg,
 	}
 
-	trId, ok := ctx.Value(trIdKey).(string)
+	trId, ok := ctx.Value(middlewares.DeploymentIdKey).(string)
 	if ok {
 		ret.TransactionId = trId
 	}
@@ -51,7 +52,7 @@ func ErrorNotification(ctx context.Context, rsn string, err error) *Notification
 		Message: err.Error(),
 	}
 
-	trId, ok := ctx.Value(trIdKey).(string)
+	trId, ok := ctx.Value(middlewares.DeploymentIdKey).(string)
 	if ok {
 		ret.TransactionId = trId
 	}
