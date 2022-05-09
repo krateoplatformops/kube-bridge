@@ -14,7 +14,7 @@ import (
 
 const (
 	NotificationEventID = eventbus.EventID("notify.event")
-	trIdKey             = "developmentId"
+	trIdKey             = "deploymentId"
 )
 
 const (
