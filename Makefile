@@ -8,7 +8,8 @@ VENDOR := Kiratech
 # Github Container Registry
 DOCKER_REGISTRY := ghcr.io/$(ORG_NAME)
 
-PLATFORM := "linux/amd64,linux/arm64,linux/arm"
+#PLATFORM := "linux/amd64,linux/arm64,linux/arm"
+PLATFORM := "linux/amd64"
 
 # Tools
 KIND=$(shell which kind)
