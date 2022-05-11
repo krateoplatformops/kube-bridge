@@ -44,6 +44,7 @@ jobs:
           owner: krateoplatformops
           repository: helm-charts
           branch: gh-pages
+          linting: off
           #target_dir: charts
           #commit_username: johndoe
           #commit_email: johndoe@example.com
