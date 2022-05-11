@@ -16,6 +16,8 @@ image:
 service:
   enabled: true   # Creates a Kubernetes Service for the kube-bridge
 
+loggerServiceUrl: http://log-svc.krateo-dev.svc
+
 host: bridge.krateo.site
 
 nameOverride: ""
