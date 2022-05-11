@@ -31,8 +31,6 @@ jobs:
       - name: Build
         run: make image.build
       
-      # - name: Build Helm Chart
-      #  run: make chart
       - name: Set tag
         run: echo "::set-output name=VERSION_TAG::$(git describe --dirty --always --tags | sed 's/-/./2' | sed 's/-/./2' )"
         id: tagger
