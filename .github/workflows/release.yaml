@@ -45,6 +45,6 @@ jobs:
           repository: helm-charts
           branch: gh-pages
           linting: off
-          #target_dir: charts
+          target_dir: kube-bridge
           #commit_username: johndoe
           #commit_email: johndoe@example.com
