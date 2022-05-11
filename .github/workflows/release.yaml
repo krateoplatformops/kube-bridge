@@ -31,8 +31,8 @@ jobs:
       - name: Build
         run: make image.build
       
-      - name: Build Helm Chart
-        run: make chart
+      #- name: Build Helm Chart
+      #  run: make chart
       
       #- uses: actions/checkout@v2
       - name: Publish Helm chart
@@ -45,6 +45,6 @@ jobs:
           repository: helm-charts
           branch: gh-pages
           linting: off
-          target_dir: kube-bridge
+          #target_dir: kube-bridge
           #commit_username: johndoe
           #commit_email: johndoe@example.com
