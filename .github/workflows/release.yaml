@@ -34,7 +34,7 @@ jobs:
       - name: Build Helm Chart
         run: make chart
       
-      - uses: actions/checkout@v2
+      #- uses: actions/checkout@v2
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
