@@ -17,10 +17,6 @@ rules:
   - apiGroups: ["pkg.crossplane.io"]
     resources: ["configurations"]
     verbs: ["list", "get", "create", "delete", "update", "watch"]
-
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "create", "delete"]
   
   - apiGroups: [""]
     resources: ["pods"]
