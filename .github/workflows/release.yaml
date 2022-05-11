@@ -39,7 +39,7 @@ jobs:
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          charts_dir: chart
+          charts_dir: ./chart
           charts_url: https://charts.krateo.io
           owner: krateoplatformops
           repository: helm-charts
