@@ -31,10 +31,15 @@ jobs:
       - name: Build
         run: make image.build
       
-      - name: Build Helm Chart
-        run: make chart
-      
-      #- uses: actions/checkout@v2
+      # - name: Build Helm Chart
+      #  run: make chart
+      - name: Set tag
+        run: echo "::set-output name=VERSION_TAG::$(git describe --dirty --always --tags | sed 's/-/./2' | sed 's/-/./2' )"
+        id: tagger
+
+      - name: Replace Version in Chart.yaml
+        run: sed -i 's/VERSION/${{ steps.tagger.outputs.VERSION_TAG }}/g' ./chart/Chart.yaml
+
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:

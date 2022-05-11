@@ -1,11 +1,11 @@
 apiVersion: v2
 name: kube-bridge
-description: Helm Chart for Krateo Kube Bridge service
+description: Krateo PlatformOps Kube Bridge service
 type: application
 icon: "https://github.com/projectkerberus/kerberus-dashboard/blob/main/docs/media/square_black_logo.png"
 
-version: 0.2.9
-appVersion: 0.2.9
+version: VERSION
+appVersion: VERSION
 
 maintainers:
   - name: Luca Sepe
