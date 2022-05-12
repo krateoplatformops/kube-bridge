@@ -2,9 +2,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "kube-bridge.serviceAccountName" . }}
+  name: {{ include "helm.serviceAccountName" . }}
   labels:
-    {{- include "kube-bridge.labels" . | nindent 8 }}
+    {{- include "helm.labels" . | nindent 8 }}
 rules:
   - apiGroups: [""]
     resources: ["secrets"]

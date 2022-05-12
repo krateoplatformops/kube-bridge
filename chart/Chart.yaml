@@ -4,10 +4,10 @@ description: Krateo PlatformOps Kube Bridge service
 type: application
 icon: "https://github.com/projectkerberus/kerberus-dashboard/blob/main/docs/media/square_black_logo.png"
 
-version: VERSION
-appVersion: VERSION
+version: 1.2.3 #VERSION
+appVersion: 1.2.3 #VERSION
 
-maintainers:
-  - name: Luca Sepe
-    email: luca.sepe@kiratech.it
-    url: https://www.kiratech.it
+dependencies:
+- name: helm-chart-library
+  version: 0.1.3
+  repository: http://charts.krateo.io

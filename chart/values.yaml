@@ -1,4 +1,3 @@
-# Default values for kerberus-operator-argocd.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -41,31 +40,55 @@ securityContext: {}
 service:
   create: true
   type: ClusterIP
-  port: 8171
+  http:
+    port: 8171
+    targetPort: 8171
+  ssh:
+    enabled: false
+  # port: 29418
+  #   rsaKey: |-
+  #     -----BEGIN RSA PRIVATE KEY-----
+  #     -----END RSA PRIVATE KEY-----
 
-containerPorts:
+podContainerPorts:
   - name: http
     containerPort: 8171
     protocol: TCP
 
+# put your env variables here
+podEnvFrom: {}
+
+podEnv:
+  - name: LOGGER_SERVICE_URL
+    value: http://log-svc.krateo-dev.svc
+  - name: KUBE_BRIDGE_DEBUG
+    value: "true"
+  - name: KUBE_BRIDGE_PORT
+    value: "8171"
+
 ingress:
-  enabled: false
+  enabled: true
   annotations:
     kubernetes.io/ingress.class: kong
-  hosts:
-    - host: bridge.krateo.site
-      paths:
-      - path: /*
-        pathType: Prefix
-        backend:
-          service:
-            name: bridge.krateo.site
-            port:
-              number: 8171
-  tls: []
-  #  - secretName: bridge-krateo-tls
-  #    hosts:
-  #      - bridge.krateo.site
+  host: bridge.krateo.site
+  tls:
+    enabled: false
+    secret:
+      create: true
+      # `name` will only be used, if `create` is set to false to bind an
+      # existing secret. Otherwise the name will be automatically generated to
+      # avoid conflicts between multiple chart installations.
+      name:
+    # `cert`and `key` will only be used, if the secret will be created by
+    # this chart.
+    cert: |-
+      -----BEGIN CERTIFICATE-----
+    
+      -----END CERTIFICATE-----
+    key: |-
+      -----BEGIN RSA PRIVATE KEY-----
+    
+      -----END RSA PRIVATE KEY-----
 
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -93,15 +116,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-# put your env variables here
-podEnvFrom: {}
-
-podEnv:
-  - name: LOGGER_SERVICE_URL
-    value: http://log-svc.krateo-dev.svc
-  - name: KUBE_BRIDGE_DEBUG
-    value: "true"
-  - name: KUBE_BRIDGE_PORT
-    value: "8171"
-    

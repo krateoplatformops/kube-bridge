@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "kube-bridge.serviceAccountName" . }}
+  name: {{ include "helm.serviceAccountName" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "kube-bridge.serviceAccountName" . }}
+  name: {{ include "helm.serviceAccountName" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "kube-bridge.serviceAccountName" . }}
+  name: {{ include "helm.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
