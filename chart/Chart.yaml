@@ -4,8 +4,8 @@ description: Krateo PlatformOps Kube Bridge service
 type: application
 icon: "https://github.com/projectkerberus/kerberus-dashboard/blob/main/docs/media/square_black_logo.png"
 
-version: VERSION
-appVersion: VERSION
+version: 1.2.3 # VERSION
+appVersion: 1.2.3 #VERSION
 
 maintainers:
   - name: Luca Sepe

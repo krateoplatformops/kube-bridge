@@ -58,8 +58,10 @@ ingress:
       - path: /*
         pathType: Prefix
         backend:
-          serviceName: bridge.krateo.site
-          servicePort: 8171
+          service:
+            name: bridge.krateo.site
+            port:
+              number: 8171
   tls: []
   #  - secretName: bridge-krateo-tls
   #    hosts:
@@ -93,7 +95,9 @@ tolerations: []
 affinity: {}
 
 # put your env variables here
-envmap:
+podEnvFrom: {}
+
+podEnv:
   - name: LOGGER_SERVICE_URL
     value: http://log-svc.krateo-dev.svc
   - name: KUBE_BRIDGE_DEBUG

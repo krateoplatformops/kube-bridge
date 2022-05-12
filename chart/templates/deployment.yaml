@@ -39,13 +39,24 @@ spec:
               containerPort: {{ .containerPort }}
               protocol: {{ .protocol }}
             {{- end }}
+          {{- with .Values.podlivenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.podReadinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.podEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.podEnv }}
           env:
-            {{- range .Values.envmap }}
-            - name: {{ .name }}
-              value: {{ .value }}
-            {{- end }} 
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 
           {{- with .Values.nodeSelector }}
       nodeSelector:
