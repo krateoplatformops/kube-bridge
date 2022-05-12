@@ -1,15 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kube-bridge.name" . }}
+  name: {{ include "kube-bridge.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "kube-bridge.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "kube-bridge.selectorLabels" . | nindent 6 }}
-  replicas: {{ .Values.replicaCount }}
   strategy:
     type: Recreate
   template:
@@ -32,13 +34,28 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 8171
+            {{- range .Values.containerPorts }}
+            - name: {{ .name }}
+              containerPort: {{ .containerPort }}
+              protocol: {{ .protocol }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: LOGGER_SERVICE_URL
-              value: {{ .Values.loggerServiceUrl }}
-            - name: KUBE_BRIDGE_DEBUG
-              value: "true"
-            - name: KUBE_BRIDGE_PORT
-              value: "8171"
+            {{- range .Values.envmap }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }} 
+
+          {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}

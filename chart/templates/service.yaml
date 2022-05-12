@@ -1,15 +1,17 @@
-{{- if .Values.service.enabled -}}
+{{- if .Values.service.create -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "kube-bridge.name" . }}
+  name: {{ include "kube-bridge.fullname" . }}
   labels:
     {{- include "kube-bridge.labels" . | nindent 4 }}
 spec:
+  type: {{ .Values.service.type }}
   ports:
-    - port: 8171
-      targetPort: 8171
+    - port: {{ .Values.service.port }}
+      targetPort: http
       protocol: TCP
+      name: http
   selector:
     {{- include "kube-bridge.selectorLabels" . | nindent 4 }}
 {{- end }}

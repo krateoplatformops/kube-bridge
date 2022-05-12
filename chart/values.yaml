@@ -13,13 +13,6 @@ image:
 #imagePullSecrets:
 #  - name: cr-token
 
-service:
-  enabled: true   # Creates a Kubernetes Service for the kube-bridge
-
-loggerServiceUrl: http://log-svc.krateo-dev.svc
-
-host: bridge.krateo.site
-
 nameOverride: ""
 fullnameOverride: ""
 
@@ -30,11 +23,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "krateo-kube-bridge"
-
-clusterRole:
-  # Specifies whether a cluster role should be created
-  create: true
+  name: ""
 
 podAnnotations: {}
 
@@ -49,6 +38,33 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+service:
+  create: true
+  type: ClusterIP
+  port: 8171
+
+containerPorts:
+  - name: http
+    containerPort: 8171
+    protocol: TCP
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: kong
+  hosts:
+    - host: bridge.krateo.site
+      paths:
+      - path: /*
+        pathType: Prefix
+        backend:
+          serviceName: bridge.krateo.site
+          servicePort: 8171
+  tls: []
+  #  - secretName: bridge-krateo-tls
+  #    hosts:
+  #      - bridge.krateo.site
+
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -61,3 +77,27 @@ resources:
     # you can monitor memory usage using "kubectl -n krateo top pods"
     memory: "256Mi"
     cpu: "100m"
+
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# put your env variables here
+envmap:
+  - name: LOGGER_SERVICE_URL
+    value: http://log-svc.krateo-dev.svc
+  - name: KUBE_BRIDGE_DEBUG
+    value: "true"
+  - name: KUBE_BRIDGE_PORT
+    value: "8171"
+    
