@@ -60,7 +60,7 @@ podEnvFrom: {}
 
 podEnv:
   - name: LOGGER_SERVICE_URL
-    value: http://log-svc.krateo-dev.svc
+    value: http://log-service.krateo-dev.svc
   - name: KUBE_BRIDGE_DEBUG
     value: "true"
   - name: KUBE_BRIDGE_PORT
