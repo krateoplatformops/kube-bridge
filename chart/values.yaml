@@ -41,7 +41,7 @@ service:
   create: true
   type: ClusterIP
   http:
-    port: 8171
+    port: 80
     targetPort: 8171
   ssh:
     enabled: false
