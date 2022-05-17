@@ -56,11 +56,11 @@ podContainerPorts:
     protocol: TCP
 
 # put your env variables here
-podEnvFrom: {}
+podEnvFrom:
+  - configMapRef:
+      name: krateo-uri-config
 
 podEnv:
-  - name: LOGGER_SERVICE_URL
-    value: http://log-service.krateo-dev.svc
   - name: KUBE_BRIDGE_DEBUG
     value: "true"
   - name: KUBE_BRIDGE_PORT
