@@ -46,8 +46,7 @@ func main() {
 	kubeconfig := flag.String(clientcmd.RecommendedConfigPathFlag,
 		defaultKubeconfig, "absolute path to the kubeconfig file")
 
-	loggerUri := flag.String("logger-uri", support.EnvString("LOG_URI", ""),
-		"logger service uri")
+	loggerUri := flag.String("logger-uri", support.EnvString("LOG_URI", ""), "logger service uri")
 	debug := flag.Bool("debug", support.EnvBool("KUBE_BRIDGE_DEBUG", true), "dump verbose output")
 	servicePort := flag.Int("port", support.EnvInt("KUBE_BRIDGE_PORT", 8171), "port to listen on")
 
@@ -87,6 +86,7 @@ func main() {
 
 	if log.Debug().Enabled() {
 		log.Debug().
+			Str("version", Version).
 			Str("debug", fmt.Sprintf("%t", *debug)).
 			Str("loggerServiceUrl", *loggerUri).
 			Str("port", fmt.Sprintf("%d", *servicePort)).

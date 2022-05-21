@@ -31,7 +31,7 @@ BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 REPO_URL := $(shell git config --get remote.origin.url | sed "s/git@/https\:\/\//; s/\.com\:/\.com\//; s/\.git//")
 LAST_COMMIT := $(shell git log -1 --pretty=%h)
 
-LD_FLAGS := -s -w -X "main.Version=${VERSION}" -X "main.Build=${LAST_COMMIT}"
+LD_FLAGS := -s -w -X "main.Version=$(VERSION)" -X "main.Build=$(LAST_COMMIT)"
 
 UNAME := $(uname -s)
 
@@ -55,6 +55,7 @@ print.vars: ### Print all the build variables
 	@echo VERSION=$(VERSION)
 	@echo BUILD_DATE=$(BUILD_DATE)
 	@echo PLATFORM=$(PLATFORM)
+	@echo LD_FLAGS=$(LD_FLAGS)
 
 .PHONY: kind.up
 kind.up: ### Starts a KinD cluster for local development
