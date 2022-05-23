@@ -16,7 +16,7 @@ WORKDIR /src
 COPY . .
 
 # Build
-RUN make deps && make build
+RUN make print.vars && make deps && make build
 
 # Deployment environment
 # ----------------------

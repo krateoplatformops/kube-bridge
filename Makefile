@@ -108,8 +108,8 @@ clean: ### Clean build files
 
 .PHONY: build
 build: ### Build binary
-	@printf "LD FLAGS = ${LD_FLAGS}\n"
-	@CGO_ENABLED=0 go build -tags netgo -a -v -ldflags "${LD_FLAGS}" -o ./bin/service ./main.go
+	@printf "LD FLAGS = $(LD_FLAGS)\n"
+	@CGO_ENABLED=0 go build -tags netgo -a -v -ldflags "$(LD_FLAGS)" -o ./bin/service ./main.go
 	@chmod +x ./bin/*
 
 .PHONY: chart
