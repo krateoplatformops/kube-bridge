@@ -3,10 +3,7 @@
 FROM golang:1.18.0-bullseye as builder
 LABEL stage=builder
 
-ARG upx_version=3.96
 ARG DEBIAN_FRONTEND=noninteractive
-
-ARG LD_FLAGS
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3008
