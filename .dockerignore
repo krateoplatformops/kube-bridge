@@ -1,6 +1,3 @@
-.gitignore
-.git
-.github
 docker-compose.yaml
 .env
 AUTHORS.md
