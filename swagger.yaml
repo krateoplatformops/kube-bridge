@@ -1,0 +1,145 @@
+swagger: "2.0"
+info:
+  description: ""
+  version: "> 0.3.5"
+  title: "KubeBridge"
+# basePath: "/"
+tags:
+- name: "secrets"
+  description: "Manage Secrets"
+- name: "apply"
+  description: "Apply Claim and Package"
+# schemes:
+# - "https"
+# - "http"
+paths:
+  /apply:
+    post:
+      tags:
+        - "apply"
+      summary: "Manage modules claim and package"
+      consumes:
+      - "application/json"
+      parameters:
+        - in: body
+          name: "body"
+          description: "Module Claim and Package base64 encoded"
+          required: true
+          schema:
+            $ref: "#/definitions/ApplyData"
+      responses:
+        "404":
+          description: "Bad Request"
+        "200":
+          description: "Ok"
+  
+  /secrets/{namespace}/{name}:
+    get:
+      tags:
+        - "secrets"
+      summary: "Get secret data stored in the namespace with the specified name"
+      parameters:
+        - in: path
+          name: namespace
+          type: string
+          required: true
+          description: Namespace.
+        - in: path
+          name: name
+          type: string
+          required: true
+          description: Secret Name.
+      description: ""
+      produces:
+      - "application/json"
+      responses:
+        "400":
+          description: "Bad Request"
+        "404":
+          description: "Not Found"
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/SecretData"
+    post:
+      tags:
+      - "secrets"
+      summary: "Create a secret in the namespace with the specified name"
+      description: ""
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+        - in: path
+          name: namespace
+          type: string
+          required: true
+          description: Namespace.
+        - in: path
+          name: name
+          type: string
+          required: true
+          description: Secret Name.
+        - in: "body"
+          name: "body"
+          description: "Array of key val pairs that needs to be added to the secret"
+          required: true
+          schema:
+            $ref: "#/definitions/SecretData"
+      responses:
+        "400":
+          description: "Bad Request"
+        "201":
+          description: "Created"
+    
+    delete:
+      tags:
+      - "secrets"
+      summary: "Deletes a secret"
+      parameters:
+        - in: path
+          name: namespace
+          type: string
+          required: true
+          description: Namespace.
+        - in: path
+          name: name
+          type: string
+          required: true
+          description: Secret Name.
+      description: ""
+      responses:
+        "404":
+          description: "Not Found"
+        "200":
+          description: "Ok"
+definitions:
+  SecretData:
+    required:
+      - "data"
+    type: "object"
+    properties:
+      data:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            key:
+              type: "string"
+            val:
+              type: "string"
+  ApplyData:
+    required:
+      - "encoding"
+      - "claim"
+      - "package"
+    type: "object"
+    properties:
+      encoding:
+        type: "string"
+        default: "base64"
+      claim:
+        type: "string"
+      package:
+        type: "string"
