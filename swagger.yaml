@@ -7,17 +7,36 @@ info:
 tags:
 - name: "secrets"
   description: "Manage Secrets"
-- name: "apply"
-  description: "Apply Claim and Package"
+- name: "template"
+  description: "Manage Claim and Package"
 # schemes:
 # - "https"
 # - "http"
 paths:
-  /apply:
+  /template:
     post:
       tags:
-        - "apply"
+        - "template"
       summary: "Manage modules claim and package"
+      consumes:
+      - "application/json"
+      parameters:
+        - in: body
+          name: "body"
+          description: "Module Claim and Package base64 encoded"
+          required: true
+          schema:
+            $ref: "#/definitions/ApplyData"
+      responses:
+        "404":
+          description: "Bad Request"
+        "200":
+          description: "Ok"
+    
+    delete:
+      tags:
+        - "template"
+      summary: "Delete modules claim and package"
       consumes:
       - "application/json"
       parameters:

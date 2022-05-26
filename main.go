@@ -138,13 +138,13 @@ func main() {
 		),
 	)).Methods(http.MethodDelete)
 
-	mux.Handle("/apply", middlewares.Logger(log)(
+	mux.Handle("/template", middlewares.Logger(log)(
 		middlewares.CorrelationID(
 			modules.Create(cfg, bus),
 		),
 	)).Methods(http.MethodPost)
 
-	mux.Handle("/apply", middlewares.Logger(log)(
+	mux.Handle("/template", middlewares.Logger(log)(
 		middlewares.CorrelationID(
 			modules.Delete(cfg, bus),
 		),
