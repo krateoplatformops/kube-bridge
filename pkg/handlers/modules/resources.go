@@ -45,7 +45,7 @@ func createOrUpdateResourceFromUnstructured(ctx context.Context, bus eventbus.Bu
 
 	cli := dc.Resource(mapping.Resource)
 
-	res, err := cli.Get(context.Background(), obj.GetName(), metav1.GetOptions{})
+	res, err := cli.Get(ctx, obj.GetName(), metav1.GetOptions{})
 	if err == nil {
 		obj.SetResourceVersion(res.GetResourceVersion())
 		_, err = cli.Update(context.Background(), obj, metav1.UpdateOptions{})
@@ -67,7 +67,7 @@ func createOrUpdateResourceFromUnstructured(ctx context.Context, bus eventbus.Bu
 		}
 	}
 
-	_, err = cli.Create(context.Background(), obj, metav1.CreateOptions{})
+	_, err = cli.Create(ctx, obj, metav1.CreateOptions{})
 	if err == nil {
 		if err == nil {
 			log.Info().
@@ -83,6 +83,42 @@ func createOrUpdateResourceFromUnstructured(ctx context.Context, bus eventbus.Bu
 	}
 	return err
 
+}
+
+func deleteResourceFromUnstructured(ctx context.Context, bus eventbus.Bus, rc *rest.Config, dc dynamic.Interface, obj *unstructured.Unstructured) error {
+	log := zerolog.Ctx(ctx)
+
+	gvk := obj.GroupVersionKind()
+
+	mapping, err := findGVR(&gvk, rc)
+	if err != nil {
+		return err
+	}
+
+	cli := dc.Resource(mapping.Resource)
+
+	res, err := cli.Get(ctx, obj.GetName(), metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+
+		return err
+	}
+
+	err = cli.Delete(ctx, res.GetName(), metav1.DeleteOptions{})
+	if err == nil {
+		log.Info().
+			Str("group", gvk.Group).
+			Str("version", gvk.Version).
+			Str("kind", gvk.Kind).
+			Str("name", obj.GetName()).
+			Msg("resource successfully deleted")
+
+		msg := fmt.Sprintf("Resource successfully deleted (apiGroup: %s, kind: %s)", gvk.Group, gvk.Kind)
+		bus.Publish(support.InfoNotification(ctx, support.ReasonResourceCreated, msg))
+	}
+	return err
 }
 
 // find the corresponding GVR (available in *meta.RESTMapping) for gvk

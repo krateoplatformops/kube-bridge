@@ -144,6 +144,12 @@ func main() {
 		),
 	)).Methods(http.MethodPost)
 
+	mux.Handle("/apply", middlewares.Logger(log)(
+		middlewares.CorrelationID(
+			modules.Delete(cfg, bus),
+		),
+	)).Methods(http.MethodDelete)
+
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *servicePort),
 		Handler:      mux,
