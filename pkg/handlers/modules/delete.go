@@ -60,15 +60,17 @@ func Delete(cfg *rest.Config, bus eventbus.Bus) http.Handler {
 		}
 
 		go func() {
-			err = deletePackageAndClaim(r.Context(), bus, cfg, pci)
+			ctx := valueOnlyContext{r.Context()}
+
+			err = deletePackageAndClaim(ctx, bus, cfg, pci)
 			if err != nil {
 				log.Error().Msg(err.Error())
-				bus.Publish(support.ErrorNotification(r.Context(), support.ReasonFailure, err))
+				bus.Publish(support.ErrorNotification(ctx, support.ReasonFailure, err))
 				return
 			}
 
 			msg := fmt.Sprintf("package: %s and claim: %s successfully deleted", pkgObj.GetName(), clmObj.GetName())
-			bus.Publish(support.InfoNotification(r.Context(), support.ReasonSuccess, msg))
+			bus.Publish(support.InfoNotification(ctx, support.ReasonSuccess, msg))
 		}()
 
 		w.WriteHeader(http.StatusOK)
