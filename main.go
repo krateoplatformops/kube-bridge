@@ -42,10 +42,7 @@ var (
 
 func main() {
 	// Flags
-	defaultKubeconfig := os.Getenv(clientcmd.RecommendedConfigPathEnvVar)
-	kubeconfig := flag.String(clientcmd.RecommendedConfigPathFlag,
-		defaultKubeconfig, "absolute path to the kubeconfig file")
-
+	kubeconfig := flag.String(clientcmd.RecommendedConfigPathFlag, "", "absolute path to the kubeconfig file")
 	loggerUri := flag.String("logger-uri", support.EnvString("LOG_URI", ""), "logger service uri")
 	debug := flag.Bool("debug", support.EnvBool("KUBE_BRIDGE_DEBUG", true), "dump verbose output")
 	servicePort := flag.Int("port", support.EnvInt("KUBE_BRIDGE_PORT", 8171), "port to listen on")
