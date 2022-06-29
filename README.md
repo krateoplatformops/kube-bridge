@@ -14,6 +14,7 @@ Replace `VERSION` with one of [tagged image version](./pkgs/container/kube-bridg
 
 ---
 
+
 ## How to try locally for development
 
 Run a local Kubernetes cluster using [kind](https://github.com/kubernetes-sigs/kind):
@@ -52,6 +53,4 @@ Try the _apply_ endpoint using a sample payload:
 $ curl --data @testdata/sample.json -H \
    "content-type:application/json" http://localhost:8171/apply
 ```
-
-
 
