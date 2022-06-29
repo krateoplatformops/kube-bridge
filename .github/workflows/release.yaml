@@ -11,6 +11,7 @@ jobs:
     permissions:
       packages: write
       contents: read
+
     steps:
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v1
@@ -47,4 +48,3 @@ jobs:
           owner: krateoplatformops
           repository: helm-charts
           branch: gh-pages
-
